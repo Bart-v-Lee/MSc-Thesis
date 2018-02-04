@@ -5,6 +5,8 @@ This code is part of a MSc thesis research at the Aerospace Engineering faculty 
 
 Title: Thickness distribution optimization in flat panels for damage tolerance using genetic algorithms
 
+Open Science Foundation Repository: https://osf.io/4rw9h/
+
 Author:
 - Bart van der Lee
 
