@@ -1,4 +1,4 @@
-# MSc-Thesis-Bart
+# MSc-Thesis
 
 Welcome!
 This code is part of a MSc thesis research at the Aerospace Engineering faculty at the Delft University of Technology.
