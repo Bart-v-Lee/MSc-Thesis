@@ -3,7 +3,7 @@
 """
 Created on Wed Dec  6 11:45:20 2017
 
-@author: Bart
+@author: Bart van der Lee
 """
 
 """
