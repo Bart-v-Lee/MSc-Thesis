@@ -73,8 +73,7 @@ class genetic_algorithm:
         
         return population_children
         
-        
-        
+                
     def construct_chromosome(self, bc, material, individual_no):
         """
         Construct chromosome with crenellation pattern based on boundary conditions given
@@ -83,7 +82,7 @@ class genetic_algorithm:
         a_max = bc.ix["Max crack length"]
         a_0 = bc.ix["Initial crack length"]
         total_a = a_max - a_0
-
+        
         crenellation_type = str(bc.ix["Crenellation type"]) #determines the type of crenellation pattern that should be used
         cren_design = crenellation(bc,material)
         
@@ -172,6 +171,9 @@ class genetic_algorithm:
         
         if ranking_method == 'Rank':
             population_ranked = genetic_algorithm.fitness_ranking_method(self,bc, population_eval)
+            
+        elif ranking_method == 'Relative Fitness':
+            pass
             
         elif ranking_method == 'Inverse Rank':
             population_ranked = genetic_algorithm.inverse_ranking_method(self, bc, population_eval)
