@@ -50,6 +50,7 @@ conn.close
 # Genetic algorithm START
 #==============================================================================
 """
+test
 
 number_of_runs = int(bc.ix["number_of_runs"])
 population_children = [] #initialize empty array for children population
