@@ -3,7 +3,7 @@
 """
 Created on Wed Sep 20 14:46:57 2017
 
-@author: Bart
+@author: Bart van der Lee
 
 #==============================================================================
 # Import packages and classes
@@ -27,7 +27,7 @@ from genetic_algorithm import genetic_algorithm
 
 """
 #==============================================================================
-# Extract boundary conditions from SQL database
+# Import boundary conditions from SQL database
 #==============================================================================
 """
 
@@ -60,55 +60,78 @@ for run in range(1,number_of_runs+1): #number of times that the genetic algorith
     """
     Step 1. Initialize population
     """
-    population = genetic_algorithm(bc, material)
-    population_initial = population.initialize_population(bc,material,population) 
+    Crenellation = CrenellationPattern(bc, material)
+    PopulationInitial = Crenellation.InitializePopulation(bc,material,population) 
     
-    number_of_generations = int(bc.ix["Number of Generations"])
+    NumberOfGenerations = int(bc.ix["Number of Generations"])
     
-    for g in range(0,number_of_generations): 
+    for g in range(0,NumberOfGenerations): 
         print("Generation "+str(g)+" has started")
         """
         Step 2. Evaluate the fatigue fitness of the individuals in the population
         """
-        population_parents_evaluated = fatigue(bc,material,population) 
+        Fatigue = FatigueCalculations(bc,material,population) 
             
         if g ==0:   #use initial population if generation number is zero
-            population_parents_evaluated = population_parents_evaluated.fatigue_calculations(population_initial, bc, material)
+            #insert loop for going through each individual in the population
+            PopulationParents = Fatigue.CalculateFatigueLife(PopulationInitial, bc, material)
             
         else:       #else use children population from previous generation
-            population_parents_evaluated = population_parents_evaluated.fatigue_calculations(population_children, bc,material)
+        
+            #insert loop for going through each individual in the population
+            PopulationParents = Fatigue.CalculateFatigueLife(PopulationCurrent, bc,material)
        
         """
         Step 2.a Store evaluated individuals for visualizations
         """  
-    #    population.generation_data(population_parents_evaluated, g, number_of_generations)
+    #    population.generation_data(population_parents_evaluated, g, NumberOfGenerations)
         
         """
-        Step 3. Rank population based on their fitness
+        Step 3. Select the fittest solutions
+        """
+    
+    
+        """
+        Step 4. Determine probability of reproduction for each solution
         """
         
         population_parents_ranked = population.rank_parents(bc, population_parents_evaluated)
         
         """
-        Step 4, 5 and 6. Select parents, recombine & mutate current population until current population has been expanded
+        Step 5. Select solutions from parent population for reproduction
         """
         
         population_children = population.recombination(bc,material,population_parents_ranked)
         
         """
-        Step 7. Selection for survival
+        Step 6. Crossover of the selected parent solutions
         """
         
         #select half of the population for survival
         
         """
-        Step 8. Termination check
+        Step 7. Mutation of Offspring population
         """
+        
+        """
+        Step 7.a Checking the Termination Condition for a Run
+        """
+        
+        """
+        Step 7.b Checking the Termination Condition for the Algorithm
+        """
+        
         termination_overview = population.population_convergence(bc, population_parents_evaluated, g, convergence_overview)
 
     """
     #==============================================================================
-    # Visualizations
+    # Genetic Algorithm END
+    #==============================================================================
+    """    
+        
+    """
+    #==============================================================================
+    # Visualization of Results
     #==============================================================================
     """  
     

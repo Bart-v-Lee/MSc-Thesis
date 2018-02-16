@@ -10,14 +10,15 @@ import numpy as np
 import pandas as pd
 from crenellation import crenellation
 
-class fatigue:
+class FatigueCalculations:
     
     def __init__(self, population, bc,m2):
-        self.bc = bc
-        self.m2 = m2
+        self.bc = bc 
+        self.m2 = m2 #self is an object
+        
         self.population = population
     
-    def fatigue_calculations(self, population, bc, m2):
+    def CalculateFatigueLife(self, population, bc, m2): #previously fatigue_calculations
         """
         Method used to evaluate the fatigue crack growth life's of a population of solutions
         """
@@ -41,7 +42,7 @@ class fatigue:
         half_width = int(bc.ix["Width"] / 2 )
         
         """
-        Create dataframe for fatigue calculations
+        Create dataframe for fatigue calculations 
         """
         
         size = int(total_a / delta_a)
@@ -50,7 +51,7 @@ class fatigue:
         array = np.zeros((size,len(list)), dtype = 'float')
         fatigue_lifetime = pd.DataFrame(data=array,index=index,columns=list, dtype='float')
         fatigue_lifetime['a'] = np.linspace(a_0,a_max,num = size).round(decimals=2)
-        sigma_applied = 1 
+        sigma_applied = 1
         
         for i in range(1,pop_size+1): 
             cren_design = crenellation(bc,m2)
@@ -135,88 +136,90 @@ class fatigue:
 
         return population
 
-    
-    def single_pattern_fatigue(self, chromosome, bc, m2):
-        
-        """
-        Method used to evaluate the fatigue crack growth life of a single crenellation pattern
-        """
-        pop_size = int(bc.ix["Population size"])
-        S_max = bc.ix["Smax"]   
-        S_min = bc.ix["Smin"]                   #Newton             
-        C = m2.ix["C"]
-        m = m2.ix["m"]
-        t_ref = bc.ix["Reference thickness"]
-        t_max = bc.ix["maximum thickness"]
-        t_min = bc.ix["minimum thickness"]
-        delta_a = bc.ix["crack step size"]
-        delta_a_meters = delta_a / 1000
-        delta_a = bc.ix["crack step size"]
-        a_max = bc.ix["Max crack length"]
-        a_0 = bc.ix["Initial crack length"]
-        total_a = a_max - a_0
-        half_width = int(bc.ix["Width"] / 2)
-        """
-        Create dataframe for fatigue calculations
-        """
-        size = int(total_a / delta_a)
-        index = range(0,size)
-        list = {'width', 'a','N','dadN','delta_K','sigma_eff_min','sigma_eff_max', 'delta_sigma_eff','area','dN', 'sigma_iso', 'beta'}
-        array = np.zeros((size,len(list)), dtype = 'float')
-        lifetime = pd.DataFrame(data=array,index=index,columns=list, dtype='float')
-        lifetime['a'] = np.linspace(a_0,a_max,num = size).round(decimals=2)
-        sigma_applied = 1
-        
-        cren_design = crenellation(bc,m2)
-        thickness_pattern = chromosome
-        cren_pattern = cren_design.create_dataframe(lifetime, thickness_pattern, bc,m2)
-        cren_design = cren_pattern[0]
-        thickness_pattern = cren_pattern[1]
-        a = cren_design['a']
-        a_meters = a / 1000
-        
-        """
-        Start evaluating crack growth equations
-        """
-        
-#            print("starting with area calculation")
-        cren_design = crenellation.cal_cren_area(self,  thickness_pattern, cren_design, bc)
-#            print("area inserted into dataframe")
-        
-        cren_design.sigma_eff_max = S_max /  (cren_design.area) #removed the division by two
-        cren_design.sigma_eff_min = S_min / (cren_design.area) #removed the division by two
-
-        cren_design.delta_sigma_eff = cren_design.sigma_eff_max - cren_design.sigma_eff_min
-        cren_design.delta_K = cren_design.delta_sigma_eff * np.sqrt(np.pi*a_meters) 
-        
-#        cren_design.K_max = cren_design.sigma_eff_max * np.sqrt(np.pi*a_meters) 
-#        cren_design.K_min = cren_design.sigma_eff_min * np.sqrt(np.pi*a_meters) 
-
-#        cren_design.delta_K_2 = cren_design.K_max - cren_design.K_min
-
-        cren_design['dadN'] = C*(pow(cren_design['delta_K'],m))
-        cren_design['dN'] = delta_a_meters / cren_design['dadN']
-        
-#            print("iterating over dN per crack step")
-
-            
-        for j in range(0,len(cren_design)):
-            cren_design['N'][j+1] = cren_design['N'][j] + cren_design['dN'][j]
-#                cren_design["sigma_iso"][j] = S_max / (2 * (half_width - thickness_pattern["Width"][cren_design.index[j]]) * np.sum(thickness_pattern["thickness"]))
-        
-
-#            cren_design["sigma_iso"] = cren_design["sigma_eff"] / np.sqrt(1-(   /   1 ))
-        cren_design["beta"] = cren_design["delta_sigma_eff"] / sigma_applied
-
-        
-        return cren_design
-        
-        
-"""        
+"""
 #==============================================================================
-#         Old code not yet to be thrown away
+# END - further code not necessarily needed -  Old code not yet to be thrown away
 #==============================================================================
-"""     
+"""
+        
+        
+#    
+#    def single_pattern_fatigue(self, chromosome, bc, m2):
+#        
+#        """
+#        Method used to evaluate the fatigue crack growth life of a single crenellation pattern
+#        """
+#        pop_size = int(bc.ix["Population size"])
+#        S_max = bc.ix["Smax"]   
+#        S_min = bc.ix["Smin"]                   #Newton             
+#        C = m2.ix["C"]
+#        m = m2.ix["m"]
+#        t_ref = bc.ix["Reference thickness"]
+#        t_max = bc.ix["maximum thickness"]
+#        t_min = bc.ix["minimum thickness"]
+#        delta_a = bc.ix["crack step size"]
+#        delta_a_meters = delta_a / 1000
+#        delta_a = bc.ix["crack step size"]
+#        a_max = bc.ix["Max crack length"]
+#        a_0 = bc.ix["Initial crack length"]
+#        total_a = a_max - a_0
+#        half_width = int(bc.ix["Width"] / 2)
+#        """
+#        Create dataframe for fatigue calculations
+#        """
+#        size = int(total_a / delta_a)
+#        index = range(0,size)
+#        list = {'width', 'a','N','dadN','delta_K','sigma_eff_min','sigma_eff_max', 'delta_sigma_eff','area','dN', 'sigma_iso', 'beta'}
+#        array = np.zeros((size,len(list)), dtype = 'float')
+#        lifetime = pd.DataFrame(data=array,index=index,columns=list, dtype='float')
+#        lifetime['a'] = np.linspace(a_0,a_max,num = size).round(decimals=2)
+#        sigma_applied = 1
+#        
+#        cren_design = crenellation(bc,m2)
+#        thickness_pattern = chromosome
+#        cren_pattern = cren_design.create_dataframe(lifetime, thickness_pattern, bc,m2)
+#        cren_design = cren_pattern[0]
+#        thickness_pattern = cren_pattern[1]
+#        a = cren_design['a']
+#        a_meters = a / 1000
+#        
+#        """
+#        Start evaluating crack growth equations
+#        """
+#        
+##            print("starting with area calculation")
+#        cren_design = crenellation.cal_cren_area(self,  thickness_pattern, cren_design, bc)
+##            print("area inserted into dataframe")
+#        
+#        cren_design.sigma_eff_max = S_max /  (cren_design.area) #removed the division by two
+#        cren_design.sigma_eff_min = S_min / (cren_design.area) #removed the division by two
+#
+#        cren_design.delta_sigma_eff = cren_design.sigma_eff_max - cren_design.sigma_eff_min
+#        cren_design.delta_K = cren_design.delta_sigma_eff * np.sqrt(np.pi*a_meters) 
+#        
+##        cren_design.K_max = cren_design.sigma_eff_max * np.sqrt(np.pi*a_meters) 
+##        cren_design.K_min = cren_design.sigma_eff_min * np.sqrt(np.pi*a_meters) 
+#
+##        cren_design.delta_K_2 = cren_design.K_max - cren_design.K_min
+#
+#        cren_design['dadN'] = C*(pow(cren_design['delta_K'],m))
+#        cren_design['dN'] = delta_a_meters / cren_design['dadN']
+#        
+##            print("iterating over dN per crack step")
+#
+#            
+#        for j in range(0,len(cren_design)):
+#            cren_design['N'][j+1] = cren_design['N'][j] + cren_design['dN'][j]
+##                cren_design["sigma_iso"][j] = S_max / (2 * (half_width - thickness_pattern["Width"][cren_design.index[j]]) * np.sum(thickness_pattern["thickness"]))
+#        
+#
+##            cren_design["sigma_iso"] = cren_design["sigma_eff"] / np.sqrt(1-(   /   1 ))
+#        cren_design["beta"] = cren_design["delta_sigma_eff"] / sigma_applied
+#
+#        
+#        return cren_design
+#        
+
 
         
 #    def rand_thickness_at_a(self,N,bc,m2,t,a, a_ref, a_prev, a_ref_prev):    
