@@ -3,7 +3,7 @@
 """
 Created on Mon Sep 18 13:13:43 2017
 
-@author: Bart
+@author: Bart van der Lee
 """
 import pandas as pd
 import numpy as np
@@ -11,14 +11,11 @@ from crenellation import crenellation
 import sys
 
 
-class genetic_algorithm:
+class GeneticAlgorithm:
 
     def __init__(self, bc, material):
         self.bc = bc
         self.material = material
-
-
-    
         
     def children_population(self, bc):
         """
@@ -36,41 +33,47 @@ class genetic_algorithm:
         return population_children
         
                 
+            
+    """           
+    #==============================================================================
+    #     Step 4. Determine probability of reproduction for each solution
+    #==============================================================================
+    """
+    
 
-        
-
-
-    def rank_parents(self, bc, population_eval):
+    def CalculateReproductionProbParents(self, bc, population_eval):
         
         ranking_method = bc.ix["Ranking Method"]
         """
         Choose selection method of parents based on condition provided in the boundary conditions bc
         """
         
-        if ranking_method == 'Rank':
-            population_ranked = genetic_algorithm.fitness_ranking_method(self,bc, population_eval)
+        if ranking_method == 'Relative Fitness Rank':
+            SelectionProbParents = genetic_algorithm.RelativeRank(self,bc, population_eval)
             
         elif ranking_method == 'Relative Fitness':
             pass
             
         elif ranking_method == 'Inverse Rank':
-            population_ranked = genetic_algorithm.inverse_ranking_method(self, bc, population_eval)
+            SelectionProbParents = genetic_algorithm.RelativeRankInverse(self, bc, population_eval)
             
         elif ranking_method == 'Tournament': #not developed yet at this point
-            population_ranked = genetic_algorithm.tournament_method(self)
+            SelectionProbParents = genetic_algorithm.Tournament(self)
             
     
-        return population_ranked
-            
-    """           
-    #==============================================================================
-    #                       Ranking methods
-    #==============================================================================
-    """
+        return SelectionProbParents
 
-    def fitness_ranking_method(self, bc, population_eval):
+
+    def RelativeFitness(self, bc, population_eval): 
         """
-        Determines the rank of individuals from high to low fitness
+        Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness value amongst other solutions in the population.
+        """
+        pass
+
+    
+    def RelativeRank(self, bc, population_eval): #previously fitness_ranking_method
+        """
+        Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness rank amongst other solutions in the population.
         """
         
         selection_rate = bc.ix["Selection Rate"]
@@ -81,10 +84,9 @@ class genetic_algorithm:
     
         return population_selected
     
-    def inverse_ranking_method(self, bc, population_eval):
-        
+    def RelativeRankInverse(self, bc, population_eval): #previously inverse_ranking_method
         """
-        Determines the rank of individuals from low to high fitness
+        Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness inverse rank amongst other solutions in the population.
         """
         
         selection_rate = bc.ix["Selection Rate"]
@@ -98,7 +100,7 @@ class genetic_algorithm:
         return population_selected
         
         
-    def tournament_method():
+    def Tournament():
         pass
     
     
@@ -131,10 +133,10 @@ class genetic_algorithm:
 
     """
     #==============================================================================
-    #                       Recombination 
+    #           6. Crossover of selected parent solutions
     #==============================================================================
     """  
-    def recombination(self, bc, material, population_selected):
+    def RecombineParents(self, bc, material, population_selected): #previously recombination
         
         population = genetic_algorithm(bc,material)
         
@@ -158,26 +160,7 @@ class genetic_algorithm:
         else:
             pass
 
-        """
-        Mutation of children
-        """
-        
-        mutation_criteria = bc.ix["Mutation Set"]    
-            
-        if mutation_criteria == "Set 1":
-            population_children = genetic_algorithm.mutate(self, bc, population_children, number_of_elites)
-            
-        if mutation_criteria == "Set 2":
-            population_children = genetic_algorithm.mutate_swap(self, bc, population_children, number_of_elites)
-        
-        if mutation_criteria == "Set 3":
-            population_children = genetic_algorithm.mutate_swap_ref_5_10cont_8thick(self, bc, population_children, number_of_elites)
 
-        else:
-            pass
-        
-        #print(population_children)
-        return population_children
         
     """
     #==============================================================================
@@ -229,7 +212,7 @@ class genetic_algorithm:
         return parent_index
         
 
-    def single_point_crossover(self, bc, population_children, population_parents):
+    def CrossoverSinglePoint(self, bc, population_children, population_parents): #previously single_point_crossover
         """
         Assign & calculate variables
         """
@@ -337,10 +320,10 @@ class genetic_algorithm:
         return population_children
         
     
-    def uniform_cross_over(self):
+    def CrossoverUniform(self):
         pass
     
-    def addition_crossover(self, bc, population_children, population_parents):
+    def CrossoverAddition(self, bc, population_children, population_parents): #previously addition_crossover
         """
         Currently not in use
         """
@@ -372,9 +355,32 @@ class genetic_algorithm:
         
     """
     #==============================================================================
-    #                           Mutation methods        
+    #                      7. Mutation of Offspring population  
     #==============================================================================
     """
+    
+    def MutatePopulation():
+        """
+        Output:
+        """
+        
+        mutation_criteria = bc.ix["Mutation Set"]    
+            
+        if mutation_criteria == "Set 1":
+            population_children = genetic_algorithm.mutate(self, bc, population_children, number_of_elites)
+            
+        if mutation_criteria == "Set 2":
+            population_children = genetic_algorithm.mutate_swap(self, bc, population_children, number_of_elites)
+        
+        if mutation_criteria == "Set 3":
+            population_children = genetic_algorithm.mutate_swap_ref_5_10cont_8thick(self, bc, population_children, number_of_elites)
+
+        else:
+            pass
+        
+        #print(population_children)
+        return population_children
+        
             
     def mutate(self, bc, population_children, number_of_elites):
         """

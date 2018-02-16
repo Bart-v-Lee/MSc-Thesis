@@ -50,7 +50,6 @@ conn.close
 # Genetic algorithm START
 #==============================================================================
 """
-test
 
 number_of_runs = int(bc.ix["number_of_runs"])
 population_children = [] #initialize empty array for children population
@@ -73,14 +72,15 @@ for run in range(1,number_of_runs+1): #number of times that the genetic algorith
         """
         Fatigue = FatigueCalculations(bc,material,population) 
             
-        if g ==0:   #use initial population if generation number is zero
-            #insert loop for going through each individual in the population
-            PopulationParents = Fatigue.CalculateFatigueLife(PopulationInitial, bc, material)
-            
-        else:       #else use children population from previous generation
+        if g ==0:   #use initial population for the first generation
         
             #insert loop for going through each individual in the population
-            PopulationParents = Fatigue.CalculateFatigueLife(PopulationCurrent, bc,material)
+            PopulationCurrent = Fatigue.CalculateFatigueLife(PopulationInitial, bc, material)
+            
+        else:       #else use the current population that has been produced through previous generations
+        
+            #insert loop for going through each individual in the population
+            PopulationCurrent = Fatigue.CalculateFatigueLife(PopulationCurrent, bc,material)
        
         """
         Step 2.a Store evaluated individuals for visualizations
@@ -90,37 +90,48 @@ for run in range(1,number_of_runs+1): #number of times that the genetic algorith
         """
         Step 3. Select the fittest solutions
         """
-    
+        #PopulationCurrentSelected = 
     
         """
         Step 4. Determine probability of reproduction for each solution
         """
         
-        population_parents_ranked = population.rank_parents(bc, population_parents_evaluated)
+        PopulationParents = population.CalculateSelectionProbParents(bc, population_parents_evaluated)
         
         """
         Step 5. Select solutions from parent population for reproduction
         """
         
-        population_children = population.recombination(bc,material,population_parents_ranked)
+        PopulationParentsSelected = population.recombination(bc,material,population_parents_ranked)
         
         """
         Step 6. Crossover of the selected parent solutions
         """
         
-        #select half of the population for survival
+        #PopulationOffspring = 
+        
+        """
+        Step 6.a Checking the Recombination Condition for a Generation
+        """
+        
+        
         
         """
         Step 7. Mutation of Offspring population
         """
         
+        #PopulationOffspringMutated = 
+        
         """
         Step 7.a Checking the Termination Condition for a Run
         """
         
+        #PopulationFinal = 
+        
         """
         Step 7.b Checking the Termination Condition for the Algorithm
         """
+        
         
         termination_overview = population.population_convergence(bc, population_parents_evaluated, g, convergence_overview)
 
