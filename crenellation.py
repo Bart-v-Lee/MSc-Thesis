@@ -15,14 +15,141 @@ import multiprocessing as mp
 from brute_force_method import brute_force_method
         
 
-class crenellation:
+class CrenellationPattern:
     
     def __init__(self, bc, material):
 #        self.lifetime = lifetime
         self.bc = bc
         self.material = material
-    
-   
+
+    def InitializePopulation(self, bc, material, population): #previous initialize_population
+        """
+        Output:
+        """
+        
+        pop_size = int(bc.ix["Population size"])
+        array = np.zeros((pop_size,7))
+        index = range(1,pop_size+1)
+        list = {"Original Indi. No","Fitness", "Chromosome", "Cren Design", "Balance", "Lower Bound", "Upper Bound"}
+        population_matrix = pd.DataFrame(data=array, index = index, columns = list, dtype = 'object')
+        
+        """
+        Include seed design if seeds are used
+        """
+        
+        seed_settings = bc.ix["Seed settings"]
+
+        if seed_settings != None:
+            seed_individual = np.random.randint(1,pop_size+1)
+        else:
+            seed_individual = None
+            
+        """
+        Fill initial population with randomly chosen individuals 
+        """
+            
+        for i in range(1,pop_size+1):
+        
+            if i == seed_individual:
+                t_pattern = population.use_seed(bc, material, seed_settings)
+                population_matrix.set_value(i, "Chromosome",t_pattern)
+                population_matrix["Original Indi. No"][i] = index[i-1]
+        
+            else:
+                t_pattern = population.construct_chromosome(bc,material, i)
+                population_matrix.set_value(i, "Chromosome",t_pattern)
+                population_matrix["Original Indi. No"][i] = index[i-1]
+       
+        return population_matrix
+        
+    def SeedConstructChromosome(self, bc, material, seed_settings): #previous use_seed
+        """
+        Chooses seed crenellation pattern based on value given in the boundary conditions
+        """
+        
+        if seed_settings == "Set 1":
+            t_pattern = crenellation.step_thickness(self, bc, material)
+        
+        if seed_settings == "Set 2":
+            t_pattern = crenellation.sharp_step(self,bc,material)
+            
+        if seed_settings == "Set 3":
+            t_pattern = crenellation.small_variations(self, bc, material)
+            
+        if seed_settings == "Set 4":
+            t_pattern = crenellation.large_variations(self, bc, material) 
+            
+        return t_pattern      
+        
+        
+    def RandomConstructChromosome(self, bc, material, individual_no): #previous construct_chromosome
+        """
+        Construct chromosome with crenellation pattern based on boundary conditions given
+        """
+        delta_a = bc.ix["crack step size"]
+        a_max = bc.ix["Max crack length"]
+        a_0 = bc.ix["Initial crack length"]
+        total_a = a_max - a_0
+        
+        crenellation_type = str(bc.ix["Crenellation type"]) #determines the type of crenellation pattern that should be used
+        cren_design = crenellation(bc,material)
+        
+        """
+        Crennelation pattern is chosen according to the crenellation type
+        """
+        
+        if crenellation_type == 'Random':  
+            """
+            Random crenellation pattern
+            """
+            t = cren_design.rand_thickness(bc,material)
+            t = cren_design.apply_balance_init(t, bc, individual_no)
+
+        elif crenellation_type == 'Uniform':
+            """
+            Uniform thickness plate
+            """
+            t = cren_design.uniform_thickness(bc,material)
+        
+        elif crenellation_type == 'Step thick':
+            """
+            Stepsize pattern
+            """
+            t = cren_design.step_thickness(bc,material)
+        
+        elif crenellation_type == 'Step sharp':
+            """
+            Sharp step pattern
+            """
+            t = cren_design.sharp_step(bc,material)
+        
+        elif crenellation_type == 'Reference':  
+            """
+            Reference study crenellation pattern
+            """
+            t = cren_design.ref_study_crenellation_simple(bc,material)
+        
+        elif crenellation_type == 'Lu 2015 coarse':  
+            """
+            Reference study crenellation pattern
+            """
+            t = cren_design.ref_study_cren_huber_5cont_8thick(bc,material)
+            
+        elif crenellation_type == 'Lu 2015 refined 10':  
+            """
+            Reference study crenellation pattern
+            """
+            t = cren_design.ref_study_cren_huber_10cont_8thick(bc,material)
+                 
+        elif crenellation_type == 'Lu 2015 refined 15':  
+            """
+            Reference study crenellation pattern
+            """
+            t = cren_design.ref_study_cren_huber_15cont_8thick(bc,material)
+            
+        t_pattern = t[0]
+        return t_pattern
+
     def ref_study_crenellation_huber_1(bc, material):
         delta_x = bc.ix["Stepsize horizontal"]     #mm
         W = int(bc.ix["Width"])                    #mm
@@ -172,6 +299,9 @@ class crenellation:
         """
         Step sizes from reference study optimization in Uz et al.
         """
+        
+        
+        
         t[0][0:int(size/total_container)] = 2.9
         t[0][int((1*size)/total_container):int((2*size)/total_container)] = 2.9
         t[0][int((2*size)/total_container):int((3*size)/total_container)] = 2.9
