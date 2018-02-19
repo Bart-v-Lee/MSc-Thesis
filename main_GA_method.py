@@ -7,7 +7,7 @@ Created on Wed Sep 20 14:46:57 2017
 @project: MSc thesis 
 
 #==============================================================================
-#                          Import packages and classes
+#                          Import packages 
 #==============================================================================
 """
 
@@ -15,17 +15,10 @@ import numpy as np
 import time
 from numpy import *
 import matplotlib.pyplot as pp
-import sqlite3
 import pandas as pd
 #from multiprocessing import Pool
 
 time_start = time.clock()
-
-from visuals import visual
-from crenellation import CrenellationPattern
-from fatigue import fatigue
-from genetic_algorithm import genetic_algorithm
-from database import database
 
 """
 #==============================================================================
@@ -33,13 +26,14 @@ from database import database
 #==============================================================================
 """
 
-# ExperimentNumberID = 
+ExperimentNumberID = 1
 
 """
 Step 0. Collect all boundary conditions for the experiment chosen
 """
 
-delta_x, W, N_pop, t_dict, SeedSettings, SeedNumber, NumberOfRuns, NumberOfGenerations = Database.RetrieveBoundaryConditions(ExperimentNumberID)
+import database
+BC = database.Database.RetrieveBoundaryConditions(ExperimentNumberID)
 
 """
 #==============================================================================
@@ -47,7 +41,7 @@ delta_x, W, N_pop, t_dict, SeedSettings, SeedNumber, NumberOfRuns, NumberOfGener
 #==============================================================================
 """
 
-for Run in range(1,NumberOfRuns+1): #number of times that the genetic algorithm is run for the same experiment
+for Run in range(1,BC.NumberOfRuns+1):     
 
     print("The algorithm has started run number "+str(Run))
     """
@@ -55,28 +49,35 @@ for Run in range(1,NumberOfRuns+1): #number of times that the genetic algorithm 
     """
     print("Step 1. Initializing initial population...")
     
-    Crenellation = CrenellationPattern() #object initiated with its given attributes
-    PopulationInitial = Crenellation.InitializePopulation(delta_x, W, N_pop, t_dict, SeedSettings, SeedNumber) 
+    import genetic_algorithm
+    Population = genetic_algorithm.Population(BC.N_pop, BC.PopStatisticsDict) #object initiated with its instance variables
+    PopulationInitial = genetic_algorithm.Population.InitializePopulation(BC.delta_x, BC.W, BC.N_pop, BC.t_dict, BC.SeedSettings, BC.SeedNumber) 
         
-    
-    for Generation in range(0,NumberOfGenerations): 
+    for Generation in range(0,BC.NumberOfGenerations): 
         print("Generation "+str(Generation)+" has started")
         """
         Step 2. Evaluate the fatigue fitness of the individuals in the population
         """
         print("Evaluating the objective function for each solution...")
         
-        Fatigue = FatigueCalculations(bc,material,population) 
+        import fatigue
             
-        if g ==0:   #use initial population for the first generation
+        if Generation == 0:          #use Initial population for the first generation
         
-            #insert loop for going through each individual in the population
-            PopulationCurrent = Fatigue.CalculateFatigueLife(PopulationInitial, bc, material)
+            PopulationCurrent = database.Database.RetrievePopulationDataframe()
             
-        else:       #else use the current population that has been produced through previous generations
+            for IndividualNumber in range(1,BC.N_pop+1):
+            
+                PopulationCurrent.Fitness[IndividualNumber] = fatigue.Fatigue.CalculateFatigueLife(PopulationInitial.Chromosome[IndividualNumber], BC.S_max, BC.a_0, BC.a_max, BC.delta_a,BC.C,BC.m)
+            
+        else:                       #else use the Current population that has been produced through previous generations
         
-            #insert loop for going through each individual in the population
-            PopulationCurrent = Fatigue.CalculateFatigueLife(PopulationCurrent, bc,material)
+            PreviousPopulation = PopulationCurrent
+            PopulationCurrent = database.Database.RetrievePopulationDataframe()
+            
+            for Individual in range(1,BC.N_pop+1):
+                
+                PopulationCurrent = fatigue.Fatigue.CalculateFatigueLife(PopulationCurrent)
        
         """
         Step 2.a Store evaluated individuals for visualizations
@@ -86,44 +87,63 @@ for Run in range(1,NumberOfRuns+1): #number of times that the genetic algorithm 
         """
         Step 3. Select the fittest solutions
         """
-        #PopulationCurrentSelected = 
+        PopulationCurrentSelected = genetic_algorithm.GeneticAlgorithm.SelectSurvivingPopulation(PopulationCurrent, BC.Rs)
     
         """
         Step 4. Determine probability of reproduction for each solution
         """
         
-        PopulationParents = population.CalculateSelectionProbParents(bc, population_parents_evaluated)
+        PopulationParents = genetic_algorithm.CalculateSelectionProbParents(PopulationCurrentSelected)
+        
         
         """
         Step 5. Select solutions from parent population for reproduction
         """
         
-        PopulationParentsSelected = population.recombination(bc,material,population_parents_ranked)
-        
-        """
-        Step 6. Crossover of the selected parent solutions
-        """
-        
-        #PopulationOffspring = 
-        
-        """
-        Step 6.a Checking the Recombination Condition for a Generation
-        """
-        
-        
-        
+        PopulationOffspring = database.Database.RetrievePopulationDataframe()
+
+        while len(PopulationOffspring) < len(PopulationParents):
+            
+            ParentsSelected = genetic_algorithm.SelectParents(PopulationParents)
+            
+            """
+            Step 6. Crossover of the selected parent solutions
+            """
+            
+            PopulationOffspring = genetic_algorithm.GeneticAlgorithm.RecombineParents(ParentsSelected, PopulationOffspring, BC.Pc)
+            
+            
         """
         Step 7. Mutation of Offspring population
         """
         
-        #PopulationOffspringMutated = 
+        PopulationOffspringMutated = genetic_algorithm.GeneticAlgorithm.MutatePopulation(PopulationOffspring, BC.Pm)
+        
+    
         
         """
         Step 7.a Checking the Termination Condition for a Run
         """
         
-        #PopulationFinal = 
+        TerminationCondition = genetic_algorithm.GeneticAlgorithm.CheckTermination()
         
+        if TerminationCondition == True:
+            
+            PopulationFinal = PopulationOffspringMutated
+            
+        
+            #insert loop to evaluate fitness function of each individual
+            
+            break
+        
+        else: #store Offspring Population as the Previous Population for the next Generation
+            
+            #insert line to store the population information in the database
+        
+            PopulationPrevious = PopulationOffspringMutated
+            
+            continue
+            
         """
         Step 7.b Checking the Termination Condition for the Algorithm
         """

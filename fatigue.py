@@ -13,11 +13,8 @@ from crenellation import crenellation
 
 class FatigueCalculations:
     
-    def __init__(self, population, bc,m2):
-        self.bc = bc 
-        self.m2 = m2 #self is an object
-        
-        self.population = population
+    def __init__(self, ):
+
     
     def CalculateFatigueLife(self, population, bc, m2): #previously fatigue_calculations
         """

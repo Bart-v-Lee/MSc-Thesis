@@ -11,29 +11,124 @@ import numpy as np
 from crenellation import crenellation
 import sys
 
+class Population:
+    """A set of solutions, in GA terms a " Population of individuals". A population has the following attributes:
+        
+    Attributes:
+        N_pop = an integer representing the population size, or number of inidividuals in the population
+        Statistics = a collection of statistics describing the population, such a fitess mean, std devation, max fitness, min fitness
+    
+    """
+    
+    def __init__(self, N_pop, Statistics): #object or instance variables 
+
+        self.N_pop = N_pop
+        self.Statistics = Statistics
+
+    def InitializePopulation(self, delta_x, W, N_pop, t_dict, SeedSettings, SeedNumbers): #previous initialize_population
+        """
+        Initializes a population of individuals of size N_pop, either through random or by pre-determined choice (e.g. a seed design). Depending on the SeedSettings, a number of 
+        pre-designed solutions are scaled to the given boundary conditions (delta_x, W) and inserted in the initial population. The remaining individuals are sampled randomly from
+        the solution space. 
+        """
+        
+#        pop_size = int(bc.ix["Population size"])
+#        array = np.zeros((pop_size,7))
+#        index = range(1,pop_size+1)
+#        list = {"Original Indi. No","Fitness", "Chromosome", "Cren Design", "Balance", "Lower Bound", "Upper Bound"}
+#        population_matrix = pd.DataFrame(data=array, index = index, columns = list, dtype = 'object')
+        
+        """
+        Import empty population dataframe
+        """
+        import database_connection
+        PopulationInitial = database_connection.Database.RetrievePopulationDataframe
+
+        """
+        Determine whether to import any seed design into the initial population. If True, then chooses a solution number within the population which will become the seed solution.
+        """
+
+        if SeedSettings != None:
+            IndividualNumberSeed = np.random.randint(1,N_pop+1)
+        else:
+            IndividualNumberSeed = None
+            
+        """
+        Fill the initial population with solutions 
+        """
+            
+        import crenellation
+        
+        for IndividualNumber in range(1,N_pop+1):
+        
+            if  IndividualNumber == IndividualNumberSeed:
+                PopulationInitial.t(x) = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber,delta_x,W,t_dict)
+        
+            else:
+                PopulationInitial.t(x) = crenellation.CrenellationPattern.ConstructChromosomeRandom(delta_x, W, t_dict)
+                
+       
+        return PopulationInitial
+        
+        
+        def CalculateDiversity():
+            """
+            Calculates the measure of diversity for a population based on the unique features present in the entire population
+            """
+            pass
+        
+        def CalculatePopulationStatistics():
+            """
+            Calculates the main statistics of the population based on its individuals. These main statistics are:
+                
+            Main population statistics:
+                1. Mean fitness
+                2. Standard deviation of fitness
+                3. Max fitness
+                4. Min fitness
+            """
+            pass
+       
+
 
 class GeneticAlgorithm:
+    """
+    A genetic algorithm with the following parameters.
+    
+    Parameters:
+        1. Crossover rate Pc
+        2. Mutation rate Pm
+        3. Selection rate Rs
+    """
 
-    def __init__(self, bc, material):
-        self.bc = bc
-        self.material = material
+    def __init__(self, Pc, Pm, Rs):
+        self.Pc = Pc
+        self.Pm = Pm
+        self.Rs = Rs
         
-    def children_population(self, bc):
+
+    """           
+    #==============================================================================
+    #     Step 3. Select the fittest solutions
+    #==============================================================================
+    """     
+        
+        
+    def SelectSurvivingPopulation(PopulationCurrent, Rs):
         """
-        Constructs an empty dataframe as the children population. 
+        Selects the highest scoring solutions based on fitness. The number of solutions selected is determined by the population size N_pop and the selection rate Rs.
         """
-        pop_size = int(bc.ix["Population size"])
-        array = np.zeros((pop_size,7))
-        index = range(1,pop_size+1)
-        list = {"Original Indi. No","Fitness", "Chromosome", "Cren Design", "Balance", "Lower Bound","Upper Bound"}
-        population_children = pd.DataFrame(data=array, index = index, columns = list, dtype = 'object')
-                
-        for i in range(1,pop_size+1):
-            population_children["Original Indi. No"][i] = index[i-1]
+
+        # Step 1. Rank individuals based on fitness values
         
-        return population_children
         
-                
+        # Step 2. Select the top individuals based on the given selection rate Rs
+        NumberOfSurvivors = N_pop * Rs
+        PopulationCurrentSelected = 
+        
+        
+        return PopulationCurrentSelected
+        
             
     """           
     #==============================================================================
@@ -642,3 +737,22 @@ class GeneticAlgorithm:
         return population_convergence
         
         
+#==============================================================================
+#        Old code not being used 
+#==============================================================================
+        
+#    def children_population(self, bc):
+#        """
+#        Constructs an empty dataframe as the children population. 
+#        """
+#        pop_size = int(bc.ix["Population size"])
+#        array = np.zeros((pop_size,7))
+#        index = range(1,pop_size+1)
+#        list = {"Original Indi. No","Fitness", "Chromosome", "Cren Design", "Balance", "Lower Bound","Upper Bound"}
+#        population_children = pd.DataFrame(data=array, index = index, columns = list, dtype = 'object')
+#                
+#        for i in range(1,pop_size+1):
+#            population_children["Original Indi. No"][i] = index[i-1]
+#        
+#        return population_children
+#        
