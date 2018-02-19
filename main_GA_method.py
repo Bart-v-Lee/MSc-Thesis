@@ -4,9 +4,10 @@
 Created on Wed Sep 20 14:46:57 2017
 
 @author: Bart van der Lee
+@project: MSc thesis 
 
 #==============================================================================
-# Import packages and classes
+#                          Import packages and classes
 #==============================================================================
 """
 
@@ -21,55 +22,50 @@ import pandas as pd
 time_start = time.clock()
 
 from visuals import visual
-from crenellation import crenellation
+from crenellation import CrenellationPattern
 from fatigue import fatigue
 from genetic_algorithm import genetic_algorithm
+from database import database
 
 """
 #==============================================================================
-# Import boundary conditions from SQL database
+#                       Choose which Experiment to Run
 #==============================================================================
 """
 
-conn = sqlite3.connect("materials.db")
-cur =  conn.cursor()
-material = pd.read_sql_query("Select * from Materials;", conn) 
-bc = pd.read_sql_query("Select * from BD;", conn)
-#rd = pd.read_sql_query("Select * from Reference_data;", conn)
+# ExperimentNumberID = 
 
-material = material.set_index("Source")
-material = material.loc['efatigue']
+"""
+Step 0. Collect all boundary conditions for the experiment chosen
+"""
 
-bc = bc.set_index("Type")
-bc = bc.loc['Reference Study Lu (2015) - Crenellation GA']
-
-conn.close
+delta_x, W, N_pop, t_dict, SeedSettings, SeedNumber, NumberOfRuns, NumberOfGenerations = Database.RetrieveBoundaryConditions(ExperimentNumberID)
 
 """
 #==============================================================================
-# Genetic algorithm START
+#                           Genetic algorithm START
 #==============================================================================
 """
 
-number_of_runs = int(bc.ix["number_of_runs"])
-population_children = [] #initialize empty array for children population
-convergence_overview = [] #initialize empty array for convergence tests
+for Run in range(1,NumberOfRuns+1): #number of times that the genetic algorithm is run for the same experiment
 
-for run in range(1,number_of_runs+1): #number of times that the genetic algorithm is run seperately
-   
+    print("The algorithm has started run number "+str(Run))
     """
     Step 1. Initialize population
     """
-    Crenellation = CrenellationPattern(bc, material)
-    PopulationInitial = Crenellation.InitializePopulation(bc,material,population) 
+    print("Step 1. Initializing initial population...")
     
-    NumberOfGenerations = int(bc.ix["Number of Generations"])
+    Crenellation = CrenellationPattern() #object initiated with its given attributes
+    PopulationInitial = Crenellation.InitializePopulation(delta_x, W, N_pop, t_dict, SeedSettings, SeedNumber) 
+        
     
-    for g in range(0,NumberOfGenerations): 
-        print("Generation "+str(g)+" has started")
+    for Generation in range(0,NumberOfGenerations): 
+        print("Generation "+str(Generation)+" has started")
         """
         Step 2. Evaluate the fatigue fitness of the individuals in the population
         """
+        print("Evaluating the objective function for each solution...")
+        
         Fatigue = FatigueCalculations(bc,material,population) 
             
         if g ==0:   #use initial population for the first generation

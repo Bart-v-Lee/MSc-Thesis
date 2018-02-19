@@ -3,7 +3,8 @@
 """
 Created on Mon Sep 18 13:17:40 2017
 
-@author: Bart
+@author: Bart van der Lee
+@project: MSc thesis 
 """
 
 import numpy as np
