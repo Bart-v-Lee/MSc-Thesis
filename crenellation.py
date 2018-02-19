@@ -3,7 +3,8 @@
 """
 Created on Fri Sep 22 09:48:08 2017
 
-@author: Bart
+@author: Bart van der Lee
+@project: MSc thesis 
 """
 import numpy as np
 import pandas as pd
@@ -22,24 +23,25 @@ class CrenellationPattern:
         self.bc = bc
         self.material = material
 
-    def InitializePopulation(self, bc, material, population): #previous initialize_population
+    def InitializePopulation(self, delta_x, W, N_pop, t_dict, SeedSettings, SeedNumbers): #previous initialize_population
         """
-        Output:
-        """
-        
-        pop_size = int(bc.ix["Population size"])
-        array = np.zeros((pop_size,7))
-        index = range(1,pop_size+1)
-        list = {"Original Indi. No","Fitness", "Chromosome", "Cren Design", "Balance", "Lower Bound", "Upper Bound"}
-        population_matrix = pd.DataFrame(data=array, index = index, columns = list, dtype = 'object')
-        
-        """
-        Include seed design if seeds are used
+        Initializes a population of individuals of size N_pop, either through random or by pre-determined choice. Depending on the SeedSettings, a number of 
+        pre-designed solutions are scaled to the given boundary conditions (delta_x, W) and inserted in the initial population. The rest is sampled randomly from
+        the solution space. 
         """
         
-        seed_settings = bc.ix["Seed settings"]
+#        pop_size = int(bc.ix["Population size"])
+#        array = np.zeros((pop_size,7))
+#        index = range(1,pop_size+1)
+#        list = {"Original Indi. No","Fitness", "Chromosome", "Cren Design", "Balance", "Lower Bound", "Upper Bound"}
+#        population_matrix = pd.DataFrame(data=array, index = index, columns = list, dtype = 'object')
+                
+        PopulationInitial = #generate dataframe     
 
-        if seed_settings != None:
+
+#        seed_settings = bc.ix["Seed settings"]
+
+        if SeedSettings != None:
             seed_individual = np.random.randint(1,pop_size+1)
         else:
             seed_individual = None
@@ -62,27 +64,17 @@ class CrenellationPattern:
        
         return population_matrix
         
-    def SeedConstructChromosome(self, bc, material, seed_settings): #previous use_seed
+    def ConstructChromosomeSeed(self, SeedNumbers, delta_x, W): #previous use_seed
         """
-        Chooses seed crenellation pattern based on value given in the boundary conditions
+        Retrieves the shape of the seed design from the database based on the SeedNumber provided and scales the seed design shape 
+        to fit the given boundary conditions (delta_x, W).
         """
-        
-        if seed_settings == "Set 1":
-            t_pattern = crenellation.step_thickness(self, bc, material)
-        
-        if seed_settings == "Set 2":
-            t_pattern = crenellation.sharp_step(self,bc,material)
-            
-        if seed_settings == "Set 3":
-            t_pattern = crenellation.small_variations(self, bc, material)
-            
-        if seed_settings == "Set 4":
-            t_pattern = crenellation.large_variations(self, bc, material) 
+        t_pattern = CrenellationPattern.RetrieveSeedShape(self, SeedNumber)
             
         return t_pattern      
         
         
-    def RandomConstructChromosome(self, bc, material, individual_no): #previous construct_chromosome
+    def ConstructChromosomeRandom(self, delta_x, W, t_dict): #previous construct_chromosome
         """
         Construct chromosome with crenellation pattern based on boundary conditions given
         """
@@ -149,6 +141,17 @@ class CrenellationPattern:
             
         t_pattern = t[0]
         return t_pattern
+        
+"""
+#==============================================================================
+#           Methods for creating crenellation designs 
+#==============================================================================
+"""        
+        
+        
+        
+        
+        
 
     def ref_study_crenellation_huber_1(bc, material):
         delta_x = bc.ix["Stepsize horizontal"]     #mm

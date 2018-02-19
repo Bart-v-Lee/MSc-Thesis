@@ -4,6 +4,7 @@
 Created on Mon Sep 18 13:13:43 2017
 
 @author: Bart van der Lee
+@project: MSc thesis 
 """
 import pandas as pd
 import numpy as np
