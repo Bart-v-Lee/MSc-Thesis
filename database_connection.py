@@ -18,24 +18,37 @@ class Database:
         
         pass
         
-    def RetrieveMaterial():
+    def RetrieveMaterial(MaterialID):
         """
+        Retrieves the Material constants for a chosen Material ID
         """
-        
-        
-        
-        
         
         pass
-    
-    def RetrieveBoundaryConditions():
+        
+        
+    def RetrievePopulationDataframe():
         """
+        Method imports an empty template dataframe from the database for a population
+        """
+        
+        conn = sqlite3.connect("database_thesis.db")
+        cur =  conn.cursor()
+        PopulationDataframe = pd.read_sql_query("Select * from Population;", conn) 
+        conn.close
+
+        return PopulationDataframe
+    
+    def RetrieveBoundaryConditions(ExperimentNumberID):
+        """
+        Retrieves the Boundary Conditions record from the database for a given Experiment Number
         """
         
         delta_x = 
         W = 
         N_pop = 
         t_dict = 
+        
+        delta_x, W, N_pop, t_dict, SeedSettings, SeedNumber, NumberOfRuns, NumberOfGenerations, PopStatisticsDict, Rs, Pc, Pm, S_max, a_0, a_max, delta_a,C,m
         
         """
         #==============================================================================
@@ -56,17 +69,13 @@ class Database:
         bc = bc.loc['Reference Study Lu (2015) - Crenellation GA']
         
         conn.close
-
-
-
-        
         
         
         pass
     
     def RetrieveSeedShape(self, SeedNumber, delta_x, W):
         """
-
+        Retrieves a seed shape from
         """
         
         

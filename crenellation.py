@@ -14,60 +14,30 @@ from scipy.stats import norm
 import math
 import multiprocessing as mp
 from brute_force_method import brute_force_method
-        
+            
 
 class CrenellationPattern:
+    """
+    A single solution, or in GA terms "an individual", which can have several attributes specific to the combinatorial optimization problem of crenellation design.
     
-    def __init__(self, bc, material):
-#        self.lifetime = lifetime
-        self.bc = bc
-        self.material = material
+    Attributes:
+        1. 
+        2.
+        3.
+        4.
+        5.
+    
+    """
+    
+    def __init__(self, ):
 
-    def InitializePopulation(self, delta_x, W, N_pop, t_dict, SeedSettings, SeedNumbers): #previous initialize_population
-        """
-        Initializes a population of individuals of size N_pop, either through random or by pre-determined choice. Depending on the SeedSettings, a number of 
-        pre-designed solutions are scaled to the given boundary conditions (delta_x, W) and inserted in the initial population. The rest is sampled randomly from
-        the solution space. 
-        """
-        
-#        pop_size = int(bc.ix["Population size"])
-#        array = np.zeros((pop_size,7))
-#        index = range(1,pop_size+1)
-#        list = {"Original Indi. No","Fitness", "Chromosome", "Cren Design", "Balance", "Lower Bound", "Upper Bound"}
-#        population_matrix = pd.DataFrame(data=array, index = index, columns = list, dtype = 'object')
-                
-        PopulationInitial = #generate dataframe     
+        self.
 
 
-#        seed_settings = bc.ix["Seed settings"]
-
-        if SeedSettings != None:
-            seed_individual = np.random.randint(1,pop_size+1)
-        else:
-            seed_individual = None
-            
-        """
-        Fill initial population with randomly chosen individuals 
-        """
-            
-        for i in range(1,pop_size+1):
-        
-            if i == seed_individual:
-                t_pattern = population.use_seed(bc, material, seed_settings)
-                population_matrix.set_value(i, "Chromosome",t_pattern)
-                population_matrix["Original Indi. No"][i] = index[i-1]
-        
-            else:
-                t_pattern = population.construct_chromosome(bc,material, i)
-                population_matrix.set_value(i, "Chromosome",t_pattern)
-                population_matrix["Original Indi. No"][i] = index[i-1]
-       
-        return population_matrix
-        
-    def ConstructChromosomeSeed(self, SeedNumbers, delta_x, W): #previous use_seed
+    def ConstructChromosomeSeed(self, SeedNumbers, delta_x, W, t_dict): #previous use_seed
         """
         Retrieves the shape of the seed design from the database based on the SeedNumber provided and scales the seed design shape 
-        to fit the given boundary conditions (delta_x, W).
+        to fit the given boundary conditions (delta_x, W, t_dict).
         """
         t_pattern = CrenellationPattern.RetrieveSeedShape(self, SeedNumber)
             
@@ -76,7 +46,7 @@ class CrenellationPattern:
         
     def ConstructChromosomeRandom(self, delta_x, W, t_dict): #previous construct_chromosome
         """
-        Construct chromosome with crenellation pattern based on boundary conditions given
+        Construct chromosome with crenellation pattern based on boundary conditions given (delta_x, W, t_dict)
         """
         delta_a = bc.ix["crack step size"]
         a_max = bc.ix["Max crack length"]
@@ -141,6 +111,8 @@ class CrenellationPattern:
             
         t_pattern = t[0]
         return t_pattern
+        
+        
         
 """
 #==============================================================================
