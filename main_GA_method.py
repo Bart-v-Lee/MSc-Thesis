@@ -16,6 +16,7 @@ import time
 from numpy import *
 import matplotlib.pyplot as pp
 import pandas as pd
+import json
 #from multiprocessing import Pool
 
 time_start = time.clock()
@@ -29,11 +30,12 @@ time_start = time.clock()
 ExperimentNumberID = 1
 
 """
-Step 0. Collect all boundary conditions for the experiment chosen
+Step 0. Collect all boundary conditions and material constants for the experiment chosen
 """
 
-import database
-BC = database.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+import database_connection
+BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
 
 """
 #==============================================================================
@@ -41,7 +43,7 @@ BC = database.Database.RetrieveBoundaryConditions(ExperimentNumberID)
 #==============================================================================
 """
 
-for Run in range(1,BC.NumberOfRuns+1):     
+for Run in range(1,int(BC.NumberOfRuns)+1):     
 
     print("The algorithm has started run number "+str(Run))
     """
@@ -50,34 +52,32 @@ for Run in range(1,BC.NumberOfRuns+1):
     print("Step 1. Initializing initial population...")
     
     import genetic_algorithm
-    Population = genetic_algorithm.Population(BC.N_pop, BC.PopStatisticsDict) #object initiated with its instance variables
-    PopulationInitial = genetic_algorithm.Population.InitializePopulation(BC.delta_x, BC.W, BC.N_pop, BC.t_dict, BC.SeedSettings, BC.SeedNumber) 
+    Population = genetic_algorithm.Population(BC.N_pop[0]) #object initiated with its instance variables
+    PopulationInitial = genetic_algorithm.Population.InitializePopulation(BC.NumberOfContainers[0], BC.Delta_a[0], BC.W[0], BC.N_pop[0], BC.T_dict[0], BC.SeedSettings[0], BC.SeedNumber[0]) 
         
-    for Generation in range(0,BC.NumberOfGenerations): 
+    for Generation in range(0,int(BC.NumberOfGenerations)): 
         print("Generation "+str(Generation)+" has started")
         """
         Step 2. Evaluate the fatigue fitness of the individuals in the population
         """
         print("Evaluating the objective function for each solution...")
         
-        import fatigue
             
         if Generation == 0:          #use Initial population for the first generation
         
-            PopulationCurrent = database.Database.RetrievePopulationDataframe()
+            PopulationCurrent = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
             
-            for IndividualNumber in range(1,BC.N_pop+1):
+            for IndividualNumber in range(1,int(BC.N_pop)+1):
             
-                PopulationCurrent.Fitness[IndividualNumber] = fatigue.Fatigue.CalculateFatigueLife(PopulationInitial.Chromosome[IndividualNumber], BC.S_max, BC.a_0, BC.a_max, BC.delta_a,BC.C,BC.m)
+                PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationInitial.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
             
         else:                       #else use the Current population that has been produced through previous generations
         
-            PreviousPopulation = PopulationCurrent
-            PopulationCurrent = database.Database.RetrievePopulationDataframe()
+            PopulationCurrent = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
             
-            for Individual in range(1,BC.N_pop+1):
+            for Individual in range(1,int(BC.N_pop)+1):
                 
-                PopulationCurrent = fatigue.Fatigue.CalculateFatigueLife(PopulationCurrent)
+                PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationPrevious.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
        
         """
         Step 2.a Store evaluated individuals for visualizations
@@ -100,7 +100,7 @@ for Run in range(1,BC.NumberOfRuns+1):
         Step 5. Select solutions from parent population for reproduction
         """
         
-        PopulationOffspring = database.Database.RetrievePopulationDataframe()
+        PopulationOffspring = database_connection.Database.RetrievePopulationDataframe()
 
         while len(PopulationOffspring) < len(PopulationParents):
             

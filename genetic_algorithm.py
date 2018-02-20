@@ -8,7 +8,7 @@ Created on Mon Sep 18 13:13:43 2017
 """
 import pandas as pd
 import numpy as np
-from crenellation import crenellation
+import crenellation
 import sys
 
 class Population:
@@ -20,12 +20,11 @@ class Population:
     
     """
     
-    def __init__(self, N_pop, Statistics): #object or instance variables 
+    def __init__(self, N_pop): #object or instance variables 
 
         self.N_pop = N_pop
-        self.Statistics = Statistics
 
-    def InitializePopulation(self, delta_x, W, N_pop, t_dict, SeedSettings, SeedNumbers): #previous initialize_population
+    def InitializePopulation(NumberOfContainers, delta_a, W, N_pop, t_dict, SeedSettings, SeedNumber): #previous initialize_population
         """
         Initializes a population of individuals of size N_pop, either through random or by pre-determined choice (e.g. a seed design). Depending on the SeedSettings, a number of 
         pre-designed solutions are scaled to the given boundary conditions (delta_x, W) and inserted in the initial population. The remaining individuals are sampled randomly from
@@ -42,13 +41,13 @@ class Population:
         Import empty population dataframe
         """
         import database_connection
-        PopulationInitial = database_connection.Database.RetrievePopulationDataframe
+        PopulationInitial = database_connection.Database.RetrievePopulationDataframe(N_pop)
 
         """
         Determine whether to import any seed design into the initial population. If True, then chooses a solution number within the population which will become the seed solution.
         """
 
-        if SeedSettings != None:
+        if SeedSettings == True:
             IndividualNumberSeed = np.random.randint(1,N_pop+1)
         else:
             IndividualNumberSeed = None
@@ -62,10 +61,10 @@ class Population:
         for IndividualNumber in range(1,N_pop+1):
         
             if  IndividualNumber == IndividualNumberSeed:
-                PopulationInitial.t(x) = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber,delta_x,W,t_dict)
+                PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber,delta_a,W,t_dict)
         
             else:
-                PopulationInitial.t(x) = crenellation.CrenellationPattern.ConstructChromosomeRandom(delta_x, W, t_dict)
+                PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeRandom(NumberOfContainers,delta_a, W, t_dict)
                 
        
         return PopulationInitial
@@ -106,7 +105,47 @@ class GeneticAlgorithm:
         self.Pm = Pm
         self.Rs = Rs
         
+    """           
+    #==============================================================================
+    #     Step 2. Evaluate the fitness function
+    #==============================================================================
+    """         
+        
+        
+    def EvaluateFitnessFunction(Fitness_Function_ID,Chromosome, S_max,a_0, a_max, Delta_a,C,m):
+        """
+        Main method used for evaluating the objective function, or in GA terms "fitness function".
+        Since the objective function can change depending on the experiment, this method chooses the right one
+        Furthermore it shows on overview of the equations for each objective function
+        """
 
+        # insert if-else loop to select the right fitness function
+        import fatigue
+        
+        if Fitness_Function_ID == "Set 1":
+            
+            FatigueLife = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
+            
+            """
+            The Fitness value is the unscaled, fatigue life of the solution in fatigue cycles [N]
+            """
+            
+            FitnessValue = FatigueLife 
+            
+            
+        elif Fitness_Function_ID == "Set 2":
+            
+            pass
+            
+            
+        else:
+            pass
+        
+        
+        return FitnessValue
+        
+        
+        
     """           
     #==============================================================================
     #     Step 3. Select the fittest solutions
@@ -124,7 +163,7 @@ class GeneticAlgorithm:
         
         # Step 2. Select the top individuals based on the given selection rate Rs
         NumberOfSurvivors = N_pop * Rs
-        PopulationCurrentSelected = 
+#        PopulationCurrentSelected = 
         
         
         return PopulationCurrentSelected
