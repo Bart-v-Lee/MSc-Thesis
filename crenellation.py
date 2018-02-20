@@ -21,7 +21,7 @@ class CrenellationPattern:
     A single solution, or in GA terms "an individual", which can have several attributes specific to the combinatorial optimization problem of crenellation design.
     
     Attributes:
-        1. 
+        1.
         2.
         3.
         4.
@@ -29,100 +29,60 @@ class CrenellationPattern:
     
     """
     
-    def __init__(self, ):
+    def __init__(self, delta_x, W, t_dict):
 
-        self.
+        self.delta_x = delta_x
+        self.W = W
+        self.t_dict = t_dict
 
 
-    def ConstructChromosomeSeed(self, SeedNumbers, delta_x, W, t_dict): #previous use_seed
+    def ConstructChromosomeSeed(SeedNumber, delta_a, W, t_dict): #previous use_seed
         """
         Retrieves the shape of the seed design from the database based on the SeedNumber provided and scales the seed design shape 
         to fit the given boundary conditions (delta_x, W, t_dict).
         """
-        t_pattern = CrenellationPattern.RetrieveSeedShape(self, SeedNumber)
+        t_pattern = CrenellationPattern.RetrieveSeedShape(SeedNumber)
             
+        # add code to scale the shape to the provided boundary conditions
+        
         return t_pattern      
         
         
-    def ConstructChromosomeRandom(self, delta_x, W, t_dict): #previous construct_chromosome
+    def ConstructChromosomeRandom(NumberOfContainers, delta_a, W, t_dict): #previous construct_chromosome
         """
-        Construct chromosome with crenellation pattern based on boundary conditions given (delta_x, W, t_dict)
-        """
-        delta_a = bc.ix["crack step size"]
-        a_max = bc.ix["Max crack length"]
-        a_0 = bc.ix["Initial crack length"]
-        total_a = a_max - a_0
-        
-        crenellation_type = str(bc.ix["Crenellation type"]) #determines the type of crenellation pattern that should be used
-        cren_design = crenellation(bc,material)
-        
-        """
-        Crennelation pattern is chosen according to the crenellation type
+        Construct chromosome with crenellation pattern based on boundary conditions given (NumberOfContainers, W, t_dict).
+        In the problem of crenellation patterns, the chromosome consists out of an array of thickness levels.
         """
         
-        if crenellation_type == 'Random':  
-            """
-            Random crenellation pattern
-            """
-            t = cren_design.rand_thickness(bc,material)
-            t = cren_design.apply_balance_init(t, bc, individual_no)
+        # Create an array with a length defined by the boundary conditions W and delta_a
+        
+        Chromosome  = np.zeros(np.int(W/delta_a))
+        
+        # Calculate the container width delta_x
+        
+        Delta_x = int(W / NumberOfContainers)
+        
+        # Randomly choose the thickness levels for each container
+            
+        NumberOfThicknessLevels = len(t_dict)
+        ThicknessLevelsChosen = np.random.choice(NumberOfThicknessLevels,NumberOfContainers)
+        
+        # Project thickness levels onto the Chromosome using the container width Delta_x and real thickness dictionary t_dict
+        
+        for i in range(1,NumberOfContainers+1):
 
-        elif crenellation_type == 'Uniform':
-            """
-            Uniform thickness plate
-            """
-            t = cren_design.uniform_thickness(bc,material)
+            Chromosome[(i-1)*Delta_x:(i)*Delta_x] = t_dict[str(ThicknessLevelsChosen[i-1])]
         
-        elif crenellation_type == 'Step thick':
-            """
-            Stepsize pattern
-            """
-            t = cren_design.step_thickness(bc,material)
-        
-        elif crenellation_type == 'Step sharp':
-            """
-            Sharp step pattern
-            """
-            t = cren_design.sharp_step(bc,material)
-        
-        elif crenellation_type == 'Reference':  
-            """
-            Reference study crenellation pattern
-            """
-            t = cren_design.ref_study_crenellation_simple(bc,material)
-        
-        elif crenellation_type == 'Lu 2015 coarse':  
-            """
-            Reference study crenellation pattern
-            """
-            t = cren_design.ref_study_cren_huber_5cont_8thick(bc,material)
-            
-        elif crenellation_type == 'Lu 2015 refined 10':  
-            """
-            Reference study crenellation pattern
-            """
-            t = cren_design.ref_study_cren_huber_10cont_8thick(bc,material)
-                 
-        elif crenellation_type == 'Lu 2015 refined 15':  
-            """
-            Reference study crenellation pattern
-            """
-            t = cren_design.ref_study_cren_huber_15cont_8thick(bc,material)
-            
-        t_pattern = t[0]
-        return t_pattern
+        return Chromosome
         
         
         
-"""
-#==============================================================================
-#           Methods for creating crenellation designs 
-#==============================================================================
-"""        
-        
-        
-        
-        
+    """
+    #==============================================================================
+    #           Methods for creating crenellation designs 
+    #==============================================================================
+    """        
+
         
 
     def ref_study_crenellation_huber_1(bc, material):
@@ -599,18 +559,24 @@ class CrenellationPattern:
     #==============================================================================
     """        
         
-    def cal_cren_area(self, thickness_pattern, cren_design, bc):
-
-        delta_x = bc.ix["Stepsize horizontal"]           
-        thickness_pattern['Width'][0] = thickness_pattern['Width'][2]
-        thickness_pattern['Width'][1] = thickness_pattern['Width'][2]
+    def CalculateAreaInFrontOfCrack(FatigueCalculations, ThicknessPattern):
+        """
+        Calculates the total area in front of the crack as it progresses through the crenellated plate. 
+        It calculates this area for every increment of delta_a
+        """
+        
+#        thickness_pattern['Width'][0] = thickness_pattern['Width'][2]
+#        thickness_pattern['Width'][1] = thickness_pattern['Width'][2]
 
         """
-        Calculate the areas per container based on differnt crack length a
+        Calculate the areas per container based on different crack length a
         """
-        a = np.array(cren_design['a'])
-        x = np.array(thickness_pattern.ix[:,0])
+        
+        a = np.array(FatigueCalculations.a)
+        x = np.array(Chromosome)
 
+        # evaluation of the integral
+        
         area_cren = crenellation.calculate_cren_area
         
 #        print("start evaluating integral")
@@ -627,6 +593,31 @@ class CrenellationPattern:
         cren_design["area"] = np.sum(area_cren, axis=1) 
         
         return cren_design
+        
+    def calculate_cren_area(a,  x,  delta_x):
+        """
+        This method's purpose is to evaluate the Integral
+        """
+
+#        print("calculating A")
+        A = 1 - (np.true_divide(a,x)**2)
+        k = x - delta_x 
+#        print("calculating A_1")
+        A_1 = 1 - (np.true_divide(a,k)**2)
+        
+#        print("removing negative values")
+        negative_values = A < 0
+        A[negative_values] = 0
+
+        negative_values_2 = A_1 < 0
+        A_1[negative_values_2] = 0
+        
+#        print("calculating square roots")
+        area_cren = (x * np.sqrt(A))   - ((k) * np.sqrt(A_1))
+
+        return area_cren
+        
+        
         
     """        
     #==============================================================================
@@ -1097,32 +1088,7 @@ class CrenellationPattern:
 #            """
 
 
-    def calculate_cren_area(a,x, delta_x):
-        """
-        Integral evaluation
-        """
 
-#        pool = mp.Pool(processes=4)
-#        results = [pool.apply(crenellation.divide(a,x)) for a in a]
-#    
-#        
-#        print("calculating A")
-        A = 1 - (np.true_divide(a,x)**2)
-        k = x - delta_x 
-#        print("calculating A_1")
-        A_1 = 1 - (np.true_divide(a,k)**2)
-        
-#        print("removing negative values")
-        negative_values = A < 0
-        A[negative_values] = 0
-
-        negative_values_2 = A_1 < 0
-        A_1[negative_values_2] = 0
-        
-#        print("calculating square roots")
-        area_cren = (x * np.sqrt(A))   - ((k) * np.sqrt(A_1))
-
-        return area_cren
         
 #==============================================================================
 #         Mutation crenellation pattern        
@@ -1220,4 +1186,73 @@ class CrenellationPattern:
         individual_chromosome[swap_location] = individual_chromosome[swap_location] - max_swap_thickness
         
         return individual_chromosome
+        
+        
+    def ConstructChromosomeRandom_OLD(delta_x, W, t_dict): #previous construct_chromosome
+        """
+        Construct chromosome with crenellation pattern based on boundary conditions given (delta_x, W, t_dict)
+        """
+#        delta_a = bc.ix["crack step size"]
+#        a_max = bc.ix["Max crack length"]
+#        a_0 = bc.ix["Initial crack length"]
+#        total_a = a_max - a_0
+        
+        crenellation_type = str(bc.ix["Crenellation type"]) #determines the type of crenellation pattern that should be used
+        cren_design = crenellation(bc,material)
+        
+        """
+        Crennelation pattern is chosen according to the crenellation type
+        """
+        
+        if crenellation_type == 'Random':  
+            """
+            Random crenellation pattern
+            """
+            t = cren_design.rand_thickness(bc,material)
+            t = cren_design.apply_balance_init(t, bc, individual_no)
+
+        elif crenellation_type == 'Uniform':
+            """
+            Uniform thickness plate
+            """
+            t = cren_design.uniform_thickness(bc,material)
+        
+        elif crenellation_type == 'Step thick':
+            """
+            Stepsize pattern
+            """
+            t = cren_design.step_thickness(bc,material)
+        
+        elif crenellation_type == 'Step sharp':
+            """
+            Sharp step pattern
+            """
+            t = cren_design.sharp_step(bc,material)
+        
+        elif crenellation_type == 'Reference':  
+            """
+            Reference study crenellation pattern
+            """
+            t = cren_design.ref_study_crenellation_simple(bc,material)
+        
+        elif crenellation_type == 'Lu 2015 coarse':  
+            """
+            Reference study crenellation pattern
+            """
+            t = cren_design.ref_study_cren_huber_5cont_8thick(bc,material)
+            
+        elif crenellation_type == 'Lu 2015 refined 10':  
+            """
+            Reference study crenellation pattern
+            """
+            t = cren_design.ref_study_cren_huber_10cont_8thick(bc,material)
+                 
+        elif crenellation_type == 'Lu 2015 refined 15':  
+            """
+            Reference study crenellation pattern
+            """
+            t = cren_design.ref_study_cren_huber_15cont_8thick(bc,material)
+            
+        t_pattern = t[0]
+        return t_pattern
         
