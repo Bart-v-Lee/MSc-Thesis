@@ -48,31 +48,68 @@ class CrenellationPattern:
         return t_pattern      
         
         
-    def ConstructChromosomeRandom(NumberOfContainers, delta_a, W, t_dict): #previous construct_chromosome
+    def ConstructChromosomeRandom(NumberOfContainers, delta_a, W, t_dict, Constraints): #previous construct_chromosome
         """
         Construct chromosome with crenellation pattern based on boundary conditions given (NumberOfContainers, W, t_dict).
         In the problem of crenellation patterns, the chromosome consists out of an array of thickness levels.
         """
         
+        import database_connection
+        Chromosome = database_connection.Database.RetrieveChromosomeDataframe()
+        
         # Create an array with a length defined by the boundary conditions W and delta_a
         
-        Chromosome  = np.zeros(np.int(W/delta_a))
-        
-        # Calculate the container width delta_x
-        
-        Delta_x = int(W / NumberOfContainers)
-        
-        # Randomly choose the thickness levels for each container
+        if Constraints.Plate_Symmetry[0] == str(True): # Symmetry Plate Constraint is True
+            W = int(0.5*W)        
+            Width = np.linspace(1,2*W, 2*W)
+            ThicknessLeft  = np.zeros(np.int(W/delta_a))
             
-        NumberOfThicknessLevels = len(t_dict)
-        ThicknessLevelsChosen = np.random.choice(NumberOfThicknessLevels,NumberOfContainers)
-        
-        # Project thickness levels onto the Chromosome using the container width Delta_x and real thickness dictionary t_dict
-        
-        for i in range(1,NumberOfContainers+1):
+            # Calculate the container width delta_x
+            
+            Delta_x = int(W / NumberOfContainers)
+            
+            # Randomly choose the thickness levels for each container
+                
+            NumberOfThicknessLevels = len(t_dict)
+            ThicknessLevelsChosen = np.random.choice(NumberOfThicknessLevels,NumberOfContainers)
+            
+            # Project thickness levels onto the Chromosome using the container width Delta_x and real thickness dictionary t_dict
+            
+            for i in range(1,NumberOfContainers+1):
+    
+                ThicknessLeft[(i-1)*Delta_x:(i)*Delta_x] = t_dict[str(ThicknessLevelsChosen[i-1])]
+                          
 
-            Chromosome[(i-1)*Delta_x:(i)*Delta_x] = t_dict[str(ThicknessLevelsChosen[i-1])]
-        
+                
+            Thickness = np.append(ThicknessLeft, np.flipud(ThicknessLeft))
+                
+            Chromosome.Thickness = Thickness 
+            Chromosome.Width = Width
+            
+            
+        else:
+            Width = np.linspace(1,W, W)
+            Thickness  = np.zeros(np.int(W/delta_a))
+    
+            # Calculate the container width delta_x
+            
+            Delta_x = int(W / NumberOfContainers)
+            
+            # Randomly choose the thickness levels for each container
+                
+            NumberOfThicknessLevels = len(t_dict)
+            ThicknessLevelsChosen = np.random.choice(NumberOfThicknessLevels,NumberOfContainers)
+            
+            # Project thickness levels onto the Chromosome using the container width Delta_x and real thickness dictionary t_dict
+            
+            for i in range(1,NumberOfContainers+1):
+    
+                Thickness[(i-1)*Delta_x:(i)*Delta_x] = t_dict[str(ThicknessLevelsChosen[i-1])]
+            
+                
+            Chromosome.Thickness = Thickness 
+            Chromosome.Width = Width
+            
         return Chromosome
         
         
@@ -559,63 +596,68 @@ class CrenellationPattern:
     #==============================================================================
     """        
         
-    def CalculateAreaInFrontOfCrack(FatigueCalculations, ThicknessPattern):
+    def CalculateAreaInFrontOfCrack(FatigueCalculations, Chromosome, delta_a):
         """
         Calculates the total area in front of the crack as it progresses through the crenellated plate. 
         It calculates this area for every increment of delta_a
         """
         
-#        thickness_pattern['Width'][0] = thickness_pattern['Width'][2]
-#        thickness_pattern['Width'][1] = thickness_pattern['Width'][2]
-
-        """
-        Calculate the areas per container based on different crack length a
-        """
-        
         a = np.array(FatigueCalculations.a)
-        x = np.array(Chromosome)
+        x = np.array(Chromosome.Width) 
+        ThicknessPattern = np.array(Chromosome.Thickness)
+        ThicknessPatternTranspose = np.transpose(ThicknessPattern)  
 
         # evaluation of the integral
-        
-        area_cren = crenellation.calculate_cren_area
-        
-#        print("start evaluating integral")
-        X = np.fromfunction(lambda i,j: area_cren(a[i],x[j],delta_x), (len(a),len(x)), dtype = 'int')
-#        print("area calculation done")
-        
-        thickness_pattern = thickness_pattern["thickness"]
-        thickness_pattern = np.array(thickness_pattern)
-        thickness_pattern_trans = np.transpose(thickness_pattern)      
-
-        area_cren = X * thickness_pattern_trans
-        area_cren = np.around(area_cren,decimals = 3)
-        
-        cren_design["area"] = np.sum(area_cren, axis=1) 
-        
-        return cren_design
-        
-    def calculate_cren_area(a,  x,  delta_x):
+                
         """
-        This method's purpose is to evaluate the Integral
+        Evaluating the integral would usually take a long time, as it evaluates a large matrix for every crack increment delta_a.
+        This can be explaining by the fact that for every increment, it recalculates the entire area in front of the crack.
+        It could be done more efficiently by simply subtracting the area of the containers through which the crack has grown in a certain cycle delta_a
+        However, the method below is also very fast for doing large matrix calculations
+        """
+        print("start evaluating integral")
+        import crenellation
+        X = np.fromfunction(lambda i,j: crenellation.CrenellationPattern.CalculateIntegral(a[i],x[j],delta_a), (len(a),len(x)), dtype = 'int')
+        print("area calculation done")        
+
+        # Multiply the integral result with the thickness pattern defined by the crenellation pattern to get the area.
+        
+        Area = X * ThicknessPatternTranspose
+        Area = np.around(Area,decimals = 3)
+        
+        # Insert the Areas into the FatigueCalculations dataframe for each crack growth increment delta_a
+        
+        FatigueCalculations.Area = np.sum(Area, axis=1) 
+        
+        return FatigueCalculations
+        
+    def CalculateIntegral(a, x, delta_a):
+        """
+        This method's purpose is to evaluate the Integral 
         """
 
-#        print("calculating A")
+        # Evaluate the left hand side of the integral
+        
         A = 1 - (np.true_divide(a,x)**2)
-        k = x - delta_x 
-#        print("calculating A_1")
+        
+        # Evaluate the right hand side of the integral
+        
+        k = x - delta_a 
         A_1 = 1 - (np.true_divide(a,k)**2)
         
-#        print("removing negative values")
+        # Removing the negative values of the root evaluation, which mean that the crack tip has passed the respective container, which is now in the wake of the crack.
+
         negative_values = A < 0
         A[negative_values] = 0
 
         negative_values_2 = A_1 < 0
         A_1[negative_values_2] = 0
         
-#        print("calculating square roots")
-        area_cren = (x * np.sqrt(A))   - ((k) * np.sqrt(A_1))
+        # Calculate the full integral by subtracting the right from left hand
+        
+        IntegralResult = (x * np.sqrt(A))   - ((k) * np.sqrt(A_1))
 
-        return area_cren
+        return IntegralResult
         
         
         

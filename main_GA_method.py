@@ -36,7 +36,7 @@ Step 0. Collect all boundary conditions and material constants for the experimen
 import database_connection
 BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
 MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
-
+CONSTRAINTS = database_connection.Database.RetrieveConstraints(BC.Constraint_ID[0])
 """
 #==============================================================================
 #                           Genetic algorithm START
@@ -53,8 +53,8 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
     
     import genetic_algorithm
     Population = genetic_algorithm.Population(BC.N_pop[0]) #object initiated with its instance variables
-    PopulationInitial = genetic_algorithm.Population.InitializePopulation(BC.NumberOfContainers[0], BC.Delta_a[0], BC.W[0], BC.N_pop[0], BC.T_dict[0], BC.SeedSettings[0], BC.SeedNumber[0]) 
-        
+    PopulationInitial = genetic_algorithm.Population.InitializePopulation(BC.NumberOfContainers[0], BC.Delta_a[0], BC.W[0], BC.N_pop[0], BC.T_dict[0], BC.SeedSettings[0], BC.SeedNumber[0], CONSTRAINTS) 
+    
     for Generation in range(0,int(BC.NumberOfGenerations)): 
         print("Generation "+str(Generation)+" has started")
         """
@@ -62,15 +62,15 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
         """
         print("Evaluating the objective function for each solution...")
         
-            
         if Generation == 0:          #use Initial population for the first generation
         
             PopulationCurrent = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
             
             for IndividualNumber in range(1,int(BC.N_pop)+1):
-            
+                print(IndividualNumber, "Individual")
                 PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationInitial.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
-            
+                PopulationCurrent.Chromosome[IndividualNumber] = PopulationInitial.Chromosome[IndividualNumber]
+                
         else:                       #else use the Current population that has been produced through previous generations
         
             PopulationCurrent = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
@@ -87,30 +87,29 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
         """
         Step 3. Select the fittest solutions
         """
-        PopulationCurrentSelected = genetic_algorithm.GeneticAlgorithm.SelectSurvivingPopulation(PopulationCurrent, BC.Rs)
+        PopulationCurrentSelected = genetic_algorithm.GeneticAlgorithm.SelectSurvivingPopulation(PopulationCurrent, BC.Rs[0])
     
         """
         Step 4. Determine probability of reproduction for each solution
         """
         
-        PopulationParents = genetic_algorithm.CalculateSelectionProbParents(PopulationCurrentSelected)
-        
+        PopulationParents = genetic_algorithm.GeneticAlgorithm.CalculateReproductionProbParents(PopulationCurrentSelected, BC.RankingOperator[0])
         
         """
-        Step 5. Select solutions from parent population for reproduction
+        Step 5. Select (two) solutions from parent population for reproduction
         """
         
-        PopulationOffspring = database_connection.Database.RetrievePopulationDataframe()
+        PopulationOffspring = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
 
-        while len(PopulationOffspring) < len(PopulationParents):
+        while PopulationOffspring.tail(1).Chromosome[BC.N_pop[0]] == None: #keep recombining until the entire PopulationOffspring is filled with solutions
             
-            ParentsSelected = genetic_algorithm.SelectParents(PopulationParents)
+            ParentSelected1, ParentSelected2 = genetic_algorithm.GeneticAlgorithm.SelectParents(PopulationParents)
             
             """
             Step 6. Crossover of the selected parent solutions
             """
             
-            PopulationOffspring = genetic_algorithm.GeneticAlgorithm.RecombineParents(ParentsSelected, PopulationOffspring, BC.Pc)
+            PopulationOffspring = genetic_algorithm.GeneticAlgorithm.RecombineParents(ParentSelected1, ParentSelected2, PopulationOffspring, BC.Pc[0], BC.CrossoverOperator[0], CONSTRAINTS)
             
             
         """

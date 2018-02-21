@@ -32,6 +32,31 @@ class Database:
         return MaterialConstants
         
         
+    def RetrieveConstraints(Constraint_ID):
+        """
+        Retrieves the Material constants for a chosen Material ID
+        """
+        conn = sqlite3.connect("database_thesis.db")
+        cur =  conn.cursor()
+        ExperimentConstraints = pd.read_sql_query("SELECT * FROM Constraints WHERE Constraint_ID = (?);", conn, params = (str(Constraint_ID),) ) 
+        
+        conn.close
+        
+        return ExperimentConstraints
+        
+    def RetrieveChromosomeDataframe():
+        """
+        Retrieves the Material constants for a chosen Material ID
+        """
+        conn = sqlite3.connect("database_thesis.db")
+        cur =  conn.cursor()
+        Chromosome = pd.read_sql_query("SELECT * FROM Crenellation;", conn ) 
+        
+        conn.close
+        
+        return Chromosome
+        
+        
     def RetrievePopulationDataframe(N_pop):
         """
         Method imports an empty template dataframe from the database for a population. 
