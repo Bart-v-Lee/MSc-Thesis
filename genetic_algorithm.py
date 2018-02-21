@@ -24,7 +24,7 @@ class Population:
 
         self.N_pop = N_pop
 
-    def InitializePopulation(NumberOfContainers, delta_a, W, N_pop, t_dict, SeedSettings, SeedNumber): #previous initialize_population
+    def InitializePopulation(NumberOfContainers, delta_a, W, N_pop, t_dict, SeedSettings, SeedNumber, Constraints): #previous initialize_population
         """
         Initializes a population of individuals of size N_pop, either through random or by pre-determined choice (e.g. a seed design). Depending on the SeedSettings, a number of 
         pre-designed solutions are scaled to the given boundary conditions (delta_x, W) and inserted in the initial population. The remaining individuals are sampled randomly from
@@ -61,10 +61,10 @@ class Population:
         for IndividualNumber in range(1,N_pop+1):
         
             if  IndividualNumber == IndividualNumberSeed:
-                PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber,delta_a,W,t_dict)
+                PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber,delta_a,W,t_dict, Constraints)
         
             else:
-                PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeRandom(NumberOfContainers,delta_a, W, t_dict)
+                PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeRandom(NumberOfContainers,delta_a, W, t_dict, Constraints)
                 
        
         return PopulationInitial
@@ -124,7 +124,7 @@ class GeneticAlgorithm:
         
         if Fitness_Function_ID == "Set 1":
             
-            FatigueLife = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
+            FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
             
             """
             The Fitness value is the unscaled, fatigue life of the solution in fatigue cycles [N]
@@ -160,11 +160,12 @@ class GeneticAlgorithm:
 
         # Step 1. Rank individuals based on fitness values
         
+        PopulationCurrentRanked = PopulationCurrent.sort_values("Fitness",ascending=False, kind='mergesort')
         
         # Step 2. Select the top individuals based on the given selection rate Rs
-        NumberOfSurvivors = N_pop * Rs
-#        PopulationCurrentSelected = 
         
+        NumberOfSurvivors = int(len(PopulationCurrentRanked) * Rs)
+        PopulationCurrentSelected = PopulationCurrentRanked[:NumberOfSurvivors]
         
         return PopulationCurrentSelected
         
@@ -175,51 +176,57 @@ class GeneticAlgorithm:
     #==============================================================================
     """
     
-
-    def CalculateReproductionProbParents(self, bc, population_eval):
-        
-        ranking_method = bc.ix["Ranking Method"]
+    def CalculateReproductionProbParents(PopulationCurrentSelected, RankingMethod):
         """
         Choose selection method of parents based on condition provided in the boundary conditions bc
         """
         
-        if ranking_method == 'Relative Fitness Rank':
-            SelectionProbParents = genetic_algorithm.RelativeRank(self,bc, population_eval)
+        import genetic_algorithm
+    
+        if RankingMethod == 'Relative Fitness Rank':
+            SelectionProbParents = genetic_algorithm.GeneticAlgorithm.RelativeRank(PopulationCurrentSelected)
             
-        elif ranking_method == 'Relative Fitness':
-            pass
+        elif RankingMethod == 'Relative Fitness':
+            SelectionProbParents = genetic_algorithm.GeneticAlgorithm.RelativeFitness(PopulationCurrentSelected)
+
+        elif RankingMethod == 'Inverse Rank':
+            SelectionProbParents = genetic_algorithm.GeneticAlgorithm.RelativeRankInverse()
             
-        elif ranking_method == 'Inverse Rank':
-            SelectionProbParents = genetic_algorithm.RelativeRankInverse(self, bc, population_eval)
-            
-        elif ranking_method == 'Tournament': #not developed yet at this point
-            SelectionProbParents = genetic_algorithm.Tournament(self)
+        elif RankingMethod == 'Tournament': #not developed yet at this point
+            SelectionProbParents = genetic_algorithm.GeneticAlgorithm.Tournament()
             
     
         return SelectionProbParents
 
 
-    def RelativeFitness(self, bc, population_eval): 
+    def RelativeFitness(PopulationCurrentSelected): 
         """
         Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness value amongst other solutions in the population.
         """
-        pass
+        N_pop_selected = len(PopulationCurrentSelected)
+            
+        PopulationCurrentSelected.index = range(1,N_pop_selected+1)
 
-    
-    def RelativeRank(self, bc, population_eval): #previously fitness_ranking_method
+        PopulationCurrentSelected["Pp"] = (N_pop_selected - PopulationCurrentSelected.index + 1) / (sum(range(1,N_pop_selected+1)))
+        PopulationCurrentSelected["Pp Cumulative"] = PopulationCurrentSelected["Pp"].cumsum()
+
+        return PopulationCurrentSelected
+        
+    def RelativeRank(PopulationCurrentSelected): #previously fitness_ranking_method
         """
         Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness rank amongst other solutions in the population.
         """
+    
         
-        selection_rate = bc.ix["Selection Rate"]
-        pop_size = int(bc.ix["Population size"])
-        population_ranked = population_eval.sort_values("Fitness",ascending=False, kind='mergesort')
-        cut_off_position = int(selection_rate * pop_size)
-        population_selected = population_ranked[:cut_off_position]
+#        selection_rate = bc.ix["Selection Rate"]
+#        pop_size = int(bc.ix["Population size"])
+#        population_ranked = population_eval.sort_values("Fitness",ascending=False, kind='mergesort')
+#        cut_off_position = int(selection_rate * pop_size)
+#        population_selected = population_ranked[:cut_off_position]
     
-        return population_selected
+        return PopulationParents
     
-    def RelativeRankInverse(self, bc, population_eval): #previously inverse_ranking_method
+    def RelativeRankInverse(): #previously inverse_ranking_method
         """
         Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness inverse rank amongst other solutions in the population.
         """
@@ -237,65 +244,73 @@ class GeneticAlgorithm:
         
     def Tournament():
         pass
+   
+    """
+    #==============================================================================
+    #           5. Select the Parents for Recombination
+    #==============================================================================
+    """  
     
+    def SelectParents(PopulationParents): # previously pair_parents
+        """
+        This method selects (two) parents for the reproduction, based on the probability distribution for the solutions being chosen as a parent
+        """
+        ParentIndex1 = 0
+        ParentIndex2 = 0
+        
+        while ParentIndex1 == ParentIndex2:
+        
+            """
+            Picks a float value between 0.0 and 1.0
+            """
+            PairIndex1 = np.random.uniform(0.0,1.0)
+            PairIndex2 = np.random.uniform(0.0,1.0)
+            """
+            Looks up the chosen first individual in the cumulative probability distribution of all parent individuals
+            """
+            number_of_true = PopulationParents["Pp Cumulative"][PopulationParents["Pp Cumulative"]>= PairIndex1].count()
+            ParentIndex1 = (len(PopulationParents) - number_of_true)+1
+            """
+            Looks up the chosen second individual in the cumulative probability distribution of all parent individuals
+            """
+            number_of_true = PopulationParents["Pp Cumulative"][PopulationParents["Pp Cumulative"]>= PairIndex2].count()
+            ParentIndex2 = (len(PopulationParents) - number_of_true)+1
+            
+            """
+            Returns the index of the chosen parent in the parent population if they are not the same solution
+            """
+        
     
-    def pairing_probability(self, bc, population_children, population_parents):
-        """
-        Calculates the probability of an individual being chosen during pairing of the parents
-        """
-        pairing_set = bc.ix["Pairing Set"]
+        return ParentIndex1, ParentIndex2
         
-        if pairing_set == "Rank Weighting":
-               
-            pop_size_selected = len(population_parents)
-            
-            population_parents.index = range(1,pop_size_selected+1)
-
-            population_parents["Pm"] = (pop_size_selected - population_parents.index + 1) / (sum(range(1,pop_size_selected+1)))
-            population_parents["Pm cumulative"] = population_parents["Pm"].cumsum()
-            
-            
-        elif pairing_set == "Fitness Weighting": #possibility to develop
-            pass
-        
-        elif pairing_set == "Tournament schema": #possibility to develop
-            pass
-        
-
-        # print(population_parents)
-        
-        return population_parents
-
     """
     #==============================================================================
     #           6. Crossover of selected parent solutions
     #==============================================================================
     """  
-    def RecombineParents(self, bc, material, population_selected): #previously recombination
-        
-        population = genetic_algorithm(bc,material)
-        
-        recombination_criteria = bc.ix["Recombination Method"]
+    def RecombineParents(ParentSelected1, ParentSelected2, PopulationOffspring, Pc, CrossoverOperator, Constraints): #previously recombination
+        """
+        Select how solutions are recombined based on the boundary condition CrossoverOperator
+        """          
+      
+        import genetic_algorithm
 
-        """
-        Cross-over of selected parents
-        """
-        if recombination_criteria == "Set 1":
-            population_children, number_of_elites = genetic_algorithm.cross_over(self, bc, material, population_selected)
+        if CrossoverOperator == "Set 1":
+            PopulationOffspring = genetic_algorithm.GeneticAlgorithm.CrossoverSinglePoint(ParentSelected1, ParentSelected2, PopulationOffspring, Pc, Constraints)
             
-        elif recombination_criteria == "Set 2":
-            population_children, number_of_elites = genetic_algorithm.uniform_cross_over(self)
+        elif CrossoverOperator == "Set 2":
+            PopulationOffspring  = genetic_algorithm.uniform_cross_over()
             
-        elif recombination_criteria == "Set 3":
-            population_children, number_of_elites = genetic_algorithm.initialize_population(self, bc,material,population)
+        elif CrossoverOperator == "Set 3":
+            PopulationOffspring  = genetic_algorithm.initialize_population()
             
-        elif recombination_criteria == "Set 4":
-            population_children, number_of_elites = genetic_algorithm.redistribution(self)
+        elif CrossoverOperator == "Set 4":
+            PopulationOffspring  = genetic_algorithm.redistribution()
             
         else:
             pass
 
-
+        return PopulationOffspring
         
     """
     #==============================================================================
@@ -329,86 +344,53 @@ class GeneticAlgorithm:
 
         return population_children, number_of_elites
 
-        
-        
-    def pair_parents(self, bc, population_parents):
-        """
-        Picks a float value between 0.0 and 1.0
-        """
-        pair_parameter = np.random.uniform(0.0,1.0)
-        """
-        Looks up the chosen individual in the cumulative probability distribution of all parent individuals
-        """
-        number_of_true = population_parents["Pm cumulative"][population_parents["Pm cumulative"]>= pair_parameter].count()
-        parent_index = (len(population_parents) - number_of_true)+1
-        """
-        Returns the index of the chosen parent in the parent population
-        """
-        return parent_index
-        
 
-    def CrossoverSinglePoint(self, bc, population_children, population_parents): #previously single_point_crossover
+    def CrossoverSinglePoint(ParentSelected1, ParentSelected2, PopulationOffspring, Pc, Constraints): #previously single_point_crossover
         """
-        Assign & calculate variables
+        This method recombines the chromosomes of two parent solutions using the principles of single point crossover
         """
-        pop_size = bc.ix["Population size"]
-        t_ref = bc.ix["Reference thickness"]
-        number_of_containers = bc.ix["number_of_containers"] #fill this in into GA boundary conditions
-        half_width = bc.ix["Width"]/2
-        output_children_per_couple = 2
-        number_of_elites = int(pop_size -  population_children["Chromosome"].count())
-        number_of_children = int(pop_size - number_of_elites) #- np.count_nonzero(population_children["Chromosome"])
-        number_of_couples = int(number_of_children / output_children_per_couple)
-        chromosome_half_length = int(len(population_parents["Chromosome"][1])/2)
-        container_width = chromosome_half_length / number_of_containers
+#        pop_size = bc.ix["Population size"]
+#        t_ref = bc.ix["Reference thickness"]
+#        number_of_containers = bc.ix["number_of_containers"] #fill this in into GA boundary conditions
+#        half_width = bc.ix["Width"]/2
+        OutputChildren = 2
+#        number_of_elites = int(pop_size -  population_children["Chromosome"].count())
+#        number_of_children = int(pop_size - number_of_elites) #- np.count_nonzero(population_children["Chromosome"])
+#        number_of_couples = int(number_of_children / output_children_per_couple)
+#        chromosome_half_length = int(len(population_parents["Chromosome"][1])/2)
+#        container_width = chromosome_half_length / number_of_containers
         
-        """
-        Pair two parents and calculate the array of feasible crossover points
-        """
-        
-        for i in range(1+number_of_elites,number_of_couples+1):
-            feasible_crossover_points = []
-
-            while feasible_crossover_points == []:
-                parent_1_index = genetic_algorithm.pair_parents(self, bc,population_parents) #chooses parent 1
-                parent_2_index = genetic_algorithm.pair_parents(self, bc,population_parents) #chooses parent 2
-                
-                while parent_1_index == parent_2_index:
-                    parent_2_index = genetic_algorithm.pair_parents(self, bc,population_parents) #ensures that the parents are not the same
-                                
-                for crossover_point in range(1,chromosome_half_length-1):
+        if Constraints.Plate_Symmetry[0] == str(True):    #only consider the first 3 containers for the crossover             
+           """
+           Only considers half of the containers for crossover, as the plate has to be symmetric
+           """
+            for CrossoverPoint in range(1,chromosome_half_length-1):
     
-                    area_parent_1 = np.sum(population_parents["Chromosome"][parent_1_index][:crossover_point])
-                    area_parent_2 = np.sum(population_parents["Chromosome"][parent_2_index][:crossover_point])
-                    
-                    """
-                    Check whether the area of both parents' chromosomes until the crossover point is within narrow range of each other.
-                    If so, the crossover point is feasible as it will yield children of equal area compared to its parents.
-                    """
-                    
-                    if area_parent_1 - 0.0001 < area_parent_2 < area_parent_1 +0.0001: 
-                        
-                        container_edges = np.arange(1,number_of_containers)*container_width
-                        
-                        """
-                        If the crossover point is at an edge of the container, add it to the array of feasible crossover points.
-                        Not most computationally efficient, yet not a bottleneck.
-                        """
-                        
-                        if crossover_point in container_edges:
-                            feasible_crossover_points = np.append(feasible_crossover_points,int(crossover_point))
-                            print("possible crossover points",feasible_crossover_points)
-    #                        print("area parent 1",area_parent_1)
-    #                        print("area parent 2", area_parent_2)
-            
+                area_parent_1 = np.sum(population_parents["Chromosome"][parent_1_index][:crossover_point])
+                area_parent_2 = np.sum(population_parents["Chromosome"][parent_2_index][:crossover_point])
+                
+                
+                container_edges = np.arange(1,number_of_containers)*delta_x #make sure that the crossover only happens at the edges of containers
+                
+                """
+                If the crossover point is at an edge of the container, add it to the array of feasible crossover points.
+                Not most computationally efficient, yet not a bottleneck.
+                """
+                
+                if crossover_point in container_edges:
+                    feasible_crossover_points = np.append(feasible_crossover_points,int(crossover_point))
+                    print("possible crossover points",feasible_crossover_points)
+#                        print("area parent 1",area_parent_1)
+#                        print("area parent 2", area_parent_2)
+    
 #            print("total feasible crossover points",feasible_crossover_points)
-
+    
             """
             From array of feasible crossover points, choose one crossover point following a uniform random distribution
             """
             cross_over_point = np.random.choice(feasible_crossover_points)
-#            print("crossover point chosen", cross_over_point)
-
+    #            print("crossover point chosen", cross_over_point)
+    
             """
             Perform the crossover by combining different parts of both parents.
             """
@@ -423,34 +405,34 @@ class GeneticAlgorithm:
             """
             Calculate and apply the rebalancing of the new chromosome
             """
-#            individual_no = i
-#            individual_no_2 = i + number_of_couples
+    #            individual_no = i
+    #            individual_no_2 = i + number_of_couples
             
-#            child_1_chromosome = crenellation.apply_balance_crossover(self, child_1_chromosome, bc, individual_no)
-#            child_2_chromosome = crenellation.apply_balance_crossover(self, child_2_chromosome, bc, individual_no_2)
+    #            child_1_chromosome = crenellation.apply_balance_crossover(self, child_1_chromosome, bc, individual_no)
+    #            child_2_chromosome = crenellation.apply_balance_crossover(self, child_2_chromosome, bc, individual_no_2)
             """
             Assign new children to the children population
             """
             population_children["Chromosome"][i] = child_1_chromosome
             population_children["Chromosome"][i+number_of_couples] = child_2_chromosome
             
-#            """
-#            Check whether the area of the children is equal to the parents
-#            """
-#            area_child_1 = int(np.sum(child_1_chromosome))
-#            area_child_2 = int(np.sum(child_2_chromosome))
-#            area_parent_1 = np.sum(population_parents["Chromosome"][parent_1_index])
-#            area_parent_2 = np.sum(population_parents["Chromosome"][parent_2_index])
-#            area_ref = int(t_ref * half_width)
+    #            """
+    #            Check whether the area of the children is equal to the parents
+    #            """
+    #            area_child_1 = int(np.sum(child_1_chromosome))
+    #            area_child_2 = int(np.sum(child_2_chromosome))
+    #            area_parent_1 = np.sum(population_parents["Chromosome"][parent_1_index])
+    #            area_parent_2 = np.sum(population_parents["Chromosome"][parent_2_index])
+    #            area_ref = int(t_ref * half_width)
             
-#            if area_child_1 not in range(int(area_ref - 10), int(area_ref +10)) or area_child_2 not in range(int(area_ref - 10), int(area_ref +10)):
-#                print("area out of bounds after crossover for children individual ", i," or ",i+number_of_couples)
-#                print("the area for child 1 was ",area_child_1," and child 2 was ",area_child_2)
-#                print("the area for parent 1 was ",area_parent_1," and parent 2 was ",area_parent_2)
-#                print("Population parents was ",population_parents)
-#                print("parent 1 was number ",parent_1_index," and parent 2 was number ",parent_2_index)
-#                print("Population children became ", population_children)
-#                sys.exit('GA stopped due to unequal area with reference panel after crossover')
+    #            if area_child_1 not in range(int(area_ref - 10), int(area_ref +10)) or area_child_2 not in range(int(area_ref - 10), int(area_ref +10)):
+    #                print("area out of bounds after crossover for children individual ", i," or ",i+number_of_couples)
+    #                print("the area for child 1 was ",area_child_1," and child 2 was ",area_child_2)
+    #                print("the area for parent 1 was ",area_parent_1," and parent 2 was ",area_parent_2)
+    #                print("Population parents was ",population_parents)
+    #                print("parent 1 was number ",parent_1_index," and parent 2 was number ",parent_2_index)
+    #                print("Population children became ", population_children)
+    #                sys.exit('GA stopped due to unequal area with reference panel after crossover')
 #            
         return population_children
         
@@ -795,3 +777,114 @@ class GeneticAlgorithm:
 #        
 #        return population_children
 #        
+    """
+    Single Point Crossover - OLD - using feasible crossover points as a method to guide search within feasible solution space
+    """
+
+    def CrossoverSinglePoint(ParentSelected1, ParentSelected2, PopulationOffspring, Pc, Constraints): #previously single_point_crossover
+        """
+        This method recombines the chromosomes of two parent solutions using the principles of single point crossover
+        """
+#        pop_size = bc.ix["Population size"]
+#        t_ref = bc.ix["Reference thickness"]
+#        number_of_containers = bc.ix["number_of_containers"] #fill this in into GA boundary conditions
+#        half_width = bc.ix["Width"]/2
+        OutputChildren = 2
+#        number_of_elites = int(pop_size -  population_children["Chromosome"].count())
+#        number_of_children = int(pop_size - number_of_elites) #- np.count_nonzero(population_children["Chromosome"])
+#        number_of_couples = int(number_of_children / output_children_per_couple)
+#        chromosome_half_length = int(len(population_parents["Chromosome"][1])/2)
+#        container_width = chromosome_half_length / number_of_containers
+        
+        """
+        Pair two parents and calculate the array of feasible crossover points
+        """
+        
+
+        feasible_crossover_points = []
+
+        while feasible_crossover_points == []:
+            parent_1_index = genetic_algorithm.pair_parents(self, bc,population_parents) #chooses parent 1
+            parent_2_index = genetic_algorithm.pair_parents(self, bc,population_parents) #chooses parent 2
+            
+            while parent_1_index == parent_2_index:
+                parent_2_index = genetic_algorithm.pair_parents(self, bc,population_parents) #ensures that the parents are not the same
+                            
+            for crossover_point in range(1,chromosome_half_length-1):
+
+                area_parent_1 = np.sum(population_parents["Chromosome"][parent_1_index][:crossover_point])
+                area_parent_2 = np.sum(population_parents["Chromosome"][parent_2_index][:crossover_point])
+                
+                """
+                Check whether the area of both parents' chromosomes until the crossover point is within narrow range of each other.
+                If so, the crossover point is feasible as it will yield children of equal area compared to its parents.
+                """
+                
+                if area_parent_1 - 0.0001 < area_parent_2 < area_parent_1 +0.0001: 
+                    
+                    container_edges = np.arange(1,number_of_containers)*container_width
+                    
+                    """
+                    If the crossover point is at an edge of the container, add it to the array of feasible crossover points.
+                    Not most computationally efficient, yet not a bottleneck.
+                    """
+                    
+                    if crossover_point in container_edges:
+                        feasible_crossover_points = np.append(feasible_crossover_points,int(crossover_point))
+                        print("possible crossover points",feasible_crossover_points)
+#                        print("area parent 1",area_parent_1)
+#                        print("area parent 2", area_parent_2)
+        
+#            print("total feasible crossover points",feasible_crossover_points)
+
+        """
+        From array of feasible crossover points, choose one crossover point following a uniform random distribution
+        """
+        cross_over_point = np.random.choice(feasible_crossover_points)
+#            print("crossover point chosen", cross_over_point)
+
+        """
+        Perform the crossover by combining different parts of both parents.
+        """
+        parent_1_left = population_parents["Chromosome"][parent_1_index][:cross_over_point]
+        parent_2_left = population_parents["Chromosome"][parent_2_index][:cross_over_point]
+        parent_1_right = population_parents["Chromosome"][parent_1_index][cross_over_point:chromosome_half_length]
+        parent_2_right = population_parents["Chromosome"][parent_2_index][cross_over_point:chromosome_half_length]
+        child_1_chromosome_left_half = np.append(parent_1_left, parent_2_right)
+        child_2_chromosome_left_half = np.append(parent_2_left, parent_1_right)
+        child_1_chromosome = np.append(child_1_chromosome_left_half,np.flipud(child_1_chromosome_left_half))
+        child_2_chromosome = np.append(child_2_chromosome_left_half,np.flipud(child_2_chromosome_left_half))
+        """
+        Calculate and apply the rebalancing of the new chromosome
+        """
+#            individual_no = i
+#            individual_no_2 = i + number_of_couples
+        
+#            child_1_chromosome = crenellation.apply_balance_crossover(self, child_1_chromosome, bc, individual_no)
+#            child_2_chromosome = crenellation.apply_balance_crossover(self, child_2_chromosome, bc, individual_no_2)
+        """
+        Assign new children to the children population
+        """
+        population_children["Chromosome"][i] = child_1_chromosome
+        population_children["Chromosome"][i+number_of_couples] = child_2_chromosome
+        
+#            """
+#            Check whether the area of the children is equal to the parents
+#            """
+#            area_child_1 = int(np.sum(child_1_chromosome))
+#            area_child_2 = int(np.sum(child_2_chromosome))
+#            area_parent_1 = np.sum(population_parents["Chromosome"][parent_1_index])
+#            area_parent_2 = np.sum(population_parents["Chromosome"][parent_2_index])
+#            area_ref = int(t_ref * half_width)
+        
+#            if area_child_1 not in range(int(area_ref - 10), int(area_ref +10)) or area_child_2 not in range(int(area_ref - 10), int(area_ref +10)):
+#                print("area out of bounds after crossover for children individual ", i," or ",i+number_of_couples)
+#                print("the area for child 1 was ",area_child_1," and child 2 was ",area_child_2)
+#                print("the area for parent 1 was ",area_parent_1," and parent 2 was ",area_parent_2)
+#                print("Population parents was ",population_parents)
+#                print("parent 1 was number ",parent_1_index," and parent 2 was number ",parent_2_index)
+#                print("Population children became ", population_children)
+#                sys.exit('GA stopped due to unequal area with reference panel after crossover')
+#            
+        return population_children
+        
