@@ -63,6 +63,7 @@ class CrenellationPattern:
             W = int(0.5*W)        
             Width = np.linspace(1,2*W, 2*W)
             ThicknessLeft  = np.zeros(np.int(W/delta_a))
+            NumberOfContainers = int(0.5*NumberOfContainers)
             
             # Calculate the container width delta_x
             
@@ -616,10 +617,10 @@ class CrenellationPattern:
         It could be done more efficiently by simply subtracting the area of the containers through which the crack has grown in a certain cycle delta_a
         However, the method below is also very fast for doing large matrix calculations
         """
-        print("start evaluating integral")
+#        print("start evaluating integral")
         import crenellation
         X = np.fromfunction(lambda i,j: crenellation.CrenellationPattern.CalculateIntegral(a[i],x[j],delta_a), (len(a),len(x)), dtype = 'int')
-        print("area calculation done")        
+#        print("area calculation done")        
 
         # Multiply the integral result with the thickness pattern defined by the crenellation pattern to get the area.
         
