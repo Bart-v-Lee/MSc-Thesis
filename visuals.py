@@ -3,9 +3,9 @@
 """
 Created on Mon Sep 18 13:18:33 2017
 
-@author: Bart
+@author: Bart van der Lee
 """
-import xlrd
+
 import matplotlib.pyplot as pp
 from matplotlib import rc
 
@@ -23,9 +23,6 @@ import pandas as pd
 import matplotlib.animation as animation
 import matplotlib.ticker as mtick
 
-#==============================================================================
-# Import experimental data
-#==============================================================================
 
 ref_data = pd.ExcelFile('/Users/Bart/Google Drive/6. Education/Master/4. MSc Thesis/Python code/classes/version2/reference_study_experimental_data.xlsx')
 Uz_crenellation_right = ref_data.parse('Uz (2008) crennelated right')
@@ -36,17 +33,78 @@ Huber_cren_prediction =  ref_data.parse('Huber (2009) prediction')
 Uz_uniform_right = ref_data.parse('Uz (2008) uniform right')
 
 
-class visual:
+class FatigueVisuals:
     
-    def __init__(self, population_eval, bc, m2, population, run, g):
-        self.population_eval = population_eval
-        self.bc = bc
-        self.m2 = m2
-        self.population = population
-        self.run = run
-        self.g = g
+    def ShowCrenellationPattern(Chromosome):
+        """
+        This method shows the Crenellation pattern when a chromosome is provided
+        """
+        
+        
+        pass
     
-    def create_plot(self,population_eval, bc,m2, individual_no):
+    def ShowFatigueOverview():
+        """
+        This method shows the Fatigue Calculations overview when a solution is provided
+        """
+        
+        pass
+        
+    def ShowTop3CrenellationPatterns(PopulationFinal, PopulationInitial):
+        
+        PopulationInitialRanked = PopulationInitial.sort_values("Fitness", ascending=False, kind = 'mergesort')
+        
+        pp.figure(1,figsize=(10,8))
+        pp.axis([0,150,0,6])
+        
+        for IndividualNumber in range(1,2):
+            pp.subplot(212)
+            pp.plot(PopulationFinal.Chromosome[IndividualNumber].Thickness)
+            pp.fill_between(PopulationFinal.Chromosome[IndividualNumber].Width, 0, PopulationFinal.Chromosome[IndividualNumber].Thickness, facecolor='green')
+
+            pp.subplot(211)
+            pp.plot(PopulationInitial.Chromosome[IndividualNumber].Thickness)
+            pp.fill_between(PopulationInitialRanked.Chromosome[IndividualNumber].Width, 0, PopulationInitialRanked.Chromosome[IndividualNumber].Thickness)
+
+            
+        pp.subplot(212)
+        pp.title('Top 3 Crenellation Patterns within the Final Population')
+        
+        pp.subplot(211)
+        pp.title('Top 3 Crenellation Patterns within the Initial Population')
+        
+
+        
+        pp.tight_layout()
+        pp.show()
+        
+        
+    
+class PopulationVisuals:
+    
+    
+    def ShowInitialPopulationDiversity(PopulationInitial):
+        """
+        This method shows the features present in the initial population 
+        """
+        
+        pass
+    
+    
+    def ShowPopulationConvergence():
+
+        
+        
+        pass
+    
+    
+    
+
+    
+    
+    
+    
+    def create_plot(population_eval, bc,m2, individual_no):
         fig, axs = pp.subplots(3,1, figsize=(15,20))
         S_max = bc.ix["Smax"]
         N = int(sum(population_eval["Cren Design"][individual_no]['dN']))

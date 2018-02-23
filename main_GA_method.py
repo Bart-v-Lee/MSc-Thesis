@@ -68,9 +68,11 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             PopulationCurrent = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
             
             for IndividualNumber in range(1,int(BC.N_pop)+1):
-                print(IndividualNumber, "Individual")
                 PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationInitial.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
                 PopulationCurrent.Chromosome[IndividualNumber] = PopulationInitial.Chromosome[IndividualNumber]
+                
+                # For comparison at the end of the optimisation, the fitness values for the initial population are also stored 
+                PopulationInitial.Fitness[IndividualNumber] = PopulationCurrent.Fitness[IndividualNumber]
                 
         else:                       #else use the Current population that has been produced through previous generations
         
@@ -152,6 +154,13 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
 
 import visuals
 
+# Sort the Final Population based on Fitness
+
+PopulationFinal = PopulationCurrent.sort_values("Fitness", ascending= False, kind='mergesort')
+
+# Show top 3 crenellation patterns in the Final Population
+
+visuals.FatigueVisuals.ShowTop3CrenellationPatterns(PopulationFinal, PopulationInitial)
 
 
 """

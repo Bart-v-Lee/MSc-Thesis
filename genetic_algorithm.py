@@ -301,7 +301,7 @@ class GeneticAlgorithm:
         CrossoverRandomGenerator = np.random.uniform(0.0,1.0)
 
         if CrossoverRandomGenerator < Pc:
-            print("Crossover taking place...")
+#            print("Crossover taking place...")
             # Select how solutions are recombined based on the boundary condition CrossoverOperator
             
             import genetic_algorithm
@@ -336,7 +336,6 @@ class GeneticAlgorithm:
             #insert both parents into the OffspringPopulation
             for i in range(1,len(PopulationOffspring)):
                 
-                print(i)
                 if PopulationOffspring.Chromosome[i] is None:
 
                     PopulationOffspring.Chromosome[i] = Parent1
@@ -520,7 +519,7 @@ class GeneticAlgorithm:
             MutationRandomGenerator = np.random.uniform(0.0,1.0)
             
             if MutationRandomGenerator < Pm:
-                print("Mutation took place")
+#                print("Mutation took place")
                 
                 # Retrieve the current container thickness
 
@@ -538,7 +537,7 @@ class GeneticAlgorithm:
                     
                 # Change the container thickness to the mutated thickness in the chromosome
                 
-                Chromosome.Thickness[(ContainerNumber-1)*delta_x : ContainerNumber*delta_x] = MutatedContainerThickness
+                Chromosome.Thickness[(ContainerNumber-1)*delta_x : (ContainerNumber*delta_x)] = MutatedContainerThickness
                 
                 # If the symmetry condition is true, mirror the change to the other symmetrical half of the chromosome
                 
