@@ -119,7 +119,6 @@ class GeneticAlgorithm:
         Furthermore it shows on overview of the equations for each objective function
         """
 
-        # insert if-else loop to select the right fitness function
         import fatigue
         
         if Fitness_Function_ID == "Set 1":
@@ -138,6 +137,10 @@ class GeneticAlgorithm:
             pass
             
             
+        elif Fitness_Function_ID == "Set 3":
+            
+            pass
+        
         else:
             pass
         
@@ -288,28 +291,58 @@ class GeneticAlgorithm:
     #           6. Crossover of selected parent solutions
     #==============================================================================
     """  
-    def RecombineParents(ParentSelected1, ParentSelected2, PopulationOffspring, Pc, CrossoverOperator, Constraints): #previously recombination
+    def RecombineParents(Parent1, Parent2, PopulationOffspring, Pc, W, CrossoverOperator, Constraints, NumberOfContainers): #previously recombination
         """
-        Select how solutions are recombined based on the boundary condition CrossoverOperator
-        """          
-      
-        import genetic_algorithm
+        Determine whether the Offspring is created by crossover or that the parents are passed into the OffspringPopulation without any crossover. 
+        Crossover happens with a probability of Pc 
+        If crossover takes places, the crossover method is chosen based on the boundary condition CrossoverOperator
+        """
+        
+        CrossoverRandomGenerator = np.random.uniform(0.0,1.0)
 
-        if CrossoverOperator == "Set 1":
-            PopulationOffspring = genetic_algorithm.GeneticAlgorithm.CrossoverSinglePoint(ParentSelected1, ParentSelected2, PopulationOffspring, Pc, Constraints)
+        if CrossoverRandomGenerator < Pc:
+            print("Crossover taking place...")
+            # Select how solutions are recombined based on the boundary condition CrossoverOperator
             
-        elif CrossoverOperator == "Set 2":
-            PopulationOffspring  = genetic_algorithm.uniform_cross_over()
+            import genetic_algorithm
+    
+            if CrossoverOperator == "Set 1":
+                Child1, Child2 = genetic_algorithm.GeneticAlgorithm.CrossoverSinglePoint(Parent1, Parent2, PopulationOffspring, W, NumberOfContainers, Constraints)
+                
+            elif CrossoverOperator == "Set 2":
+                PopulationOffspring  = genetic_algorithm.uniform_cross_over()
+                
+            elif CrossoverOperator == "Set 3":
+                PopulationOffspring  = genetic_algorithm.initialize_population()
+                
+            elif CrossoverOperator == "Set 4":
+                PopulationOffspring  = genetic_algorithm.redistribution()
+                
+            else:
+                pass
             
-        elif CrossoverOperator == "Set 3":
-            PopulationOffspring  = genetic_algorithm.initialize_population()
+            #insert both children into the OffspringPopulation
             
-        elif CrossoverOperator == "Set 4":
-            PopulationOffspring  = genetic_algorithm.redistribution()
+            for i in range(1,len(PopulationOffspring)):
+                
+                if PopulationOffspring.Chromosome[i] is None: # gives error when first individuals have been place, solve!
+                
+                    PopulationOffspring.Chromosome[i] = Child1
+                    PopulationOffspring.Chromosome[i+1] = Child2
+                    break
             
+
         else:
-            pass
+            #insert both parents into the OffspringPopulation
+            for i in range(1,len(PopulationOffspring)):
+                
+                print(i)
+                if PopulationOffspring.Chromosome[i] is None:
 
+                    PopulationOffspring.Chromosome[i] = Parent1
+                    PopulationOffspring.Chromosome[i+1] = Parent2
+                    break
+                    
         return PopulationOffspring
         
     """
@@ -317,124 +350,49 @@ class GeneticAlgorithm:
     #                        Cross over methods
     #==============================================================================
     """    
-    def cross_over(self, bc, material, population_selected):
-        
-        elitism_settings = bc.ix["Elitism"]
-        
-        if elitism_settings == "True":
-            population_children, number_of_elites = genetic_algorithm.apply_elites(self,bc,population_selected)
-            print("Elitism has been used")
-            
-        elif elitism_settings == "Inverse":
-            population_children = genetic_algorithm.apply_elites_inverse(self,bc,population_selected)
-            
-        else:
-            population_children = genetic_algorithm.children_population(self, bc)
-            number_of_elites = 0
-        
-        cross_over_method = bc.ix["Cross-over Method"]
-        population_parents = population_selected
-        population_parents = genetic_algorithm.pairing_probability(self, bc, population_children, population_parents)
-        
-        if cross_over_method == "Single Point":
-            population_children = genetic_algorithm.single_point_crossover(self, bc, population_children, population_parents)
-        
-        elif cross_over_method == "Addition":
-            population_children = genetic_algorithm.addition_crossover(self, bc, population_children, population_parents)
 
-        return population_children, number_of_elites
-
-
-    def CrossoverSinglePoint(ParentSelected1, ParentSelected2, PopulationOffspring, Pc, Constraints): #previously single_point_crossover
+    def CrossoverSinglePoint(Parent1, Parent2, PopulationOffspring, W, NumberOfContainers, Constraints): #previously single_point_crossover
         """
         This method recombines the chromosomes of two parent solutions using the principles of single point crossover
         """
-#        pop_size = bc.ix["Population size"]
-#        t_ref = bc.ix["Reference thickness"]
-#        number_of_containers = bc.ix["number_of_containers"] #fill this in into GA boundary conditions
-#        half_width = bc.ix["Width"]/2
-        OutputChildren = 2
-#        number_of_elites = int(pop_size -  population_children["Chromosome"].count())
-#        number_of_children = int(pop_size - number_of_elites) #- np.count_nonzero(population_children["Chromosome"])
-#        number_of_couples = int(number_of_children / output_children_per_couple)
-#        chromosome_half_length = int(len(population_parents["Chromosome"][1])/2)
-#        container_width = chromosome_half_length / number_of_containers
+
         
-        if Constraints.Plate_Symmetry[0] == str(True):    #only consider the first 3 containers for the crossover             
-           """
-           Only considers half of the containers for crossover, as the plate has to be symmetric
-           """
-            for CrossoverPoint in range(1,chromosome_half_length-1):
-    
-                area_parent_1 = np.sum(population_parents["Chromosome"][parent_1_index][:crossover_point])
-                area_parent_2 = np.sum(population_parents["Chromosome"][parent_2_index][:crossover_point])
-                
-                
-                container_edges = np.arange(1,number_of_containers)*delta_x #make sure that the crossover only happens at the edges of containers
-                
-                """
-                If the crossover point is at an edge of the container, add it to the array of feasible crossover points.
-                Not most computationally efficient, yet not a bottleneck.
-                """
-                
-                if crossover_point in container_edges:
-                    feasible_crossover_points = np.append(feasible_crossover_points,int(crossover_point))
-                    print("possible crossover points",feasible_crossover_points)
-#                        print("area parent 1",area_parent_1)
-#                        print("area parent 2", area_parent_2)
-    
-#            print("total feasible crossover points",feasible_crossover_points)
-    
+        if Constraints.Plate_Symmetry[0] == str(True):    #only consider the first half of the containers for the crossover
+
             """
-            From array of feasible crossover points, choose one crossover point following a uniform random distribution
+            Only considers half of the containers for crossover, as the plate has to be symmetric
             """
-            cross_over_point = np.random.choice(feasible_crossover_points)
-    #            print("crossover point chosen", cross_over_point)
-    
-            """
-            Perform the crossover by combining different parts of both parents.
-            """
-            parent_1_left = population_parents["Chromosome"][parent_1_index][:cross_over_point]
-            parent_2_left = population_parents["Chromosome"][parent_2_index][:cross_over_point]
-            parent_1_right = population_parents["Chromosome"][parent_1_index][cross_over_point:chromosome_half_length]
-            parent_2_right = population_parents["Chromosome"][parent_2_index][cross_over_point:chromosome_half_length]
-            child_1_chromosome_left_half = np.append(parent_1_left, parent_2_right)
-            child_2_chromosome_left_half = np.append(parent_2_left, parent_1_right)
-            child_1_chromosome = np.append(child_1_chromosome_left_half,np.flipud(child_1_chromosome_left_half))
-            child_2_chromosome = np.append(child_2_chromosome_left_half,np.flipud(child_2_chromosome_left_half))
-            """
-            Calculate and apply the rebalancing of the new chromosome
-            """
-    #            individual_no = i
-    #            individual_no_2 = i + number_of_couples
+            # Choose the crossover point randomly
             
-    #            child_1_chromosome = crenellation.apply_balance_crossover(self, child_1_chromosome, bc, individual_no)
-    #            child_2_chromosome = crenellation.apply_balance_crossover(self, child_2_chromosome, bc, individual_no_2)
-            """
-            Assign new children to the children population
-            """
-            population_children["Chromosome"][i] = child_1_chromosome
-            population_children["Chromosome"][i+number_of_couples] = child_2_chromosome
+            NumberOfCrossoverPoints = NumberOfContainers-1
+            CrossoverPoint = int(np.random.choice(NumberOfCrossoverPoints,1))+1
+            HalfChromosome = int(0.5*W)
             
-    #            """
-    #            Check whether the area of the children is equal to the parents
-    #            """
-    #            area_child_1 = int(np.sum(child_1_chromosome))
-    #            area_child_2 = int(np.sum(child_2_chromosome))
-    #            area_parent_1 = np.sum(population_parents["Chromosome"][parent_1_index])
-    #            area_parent_2 = np.sum(population_parents["Chromosome"][parent_2_index])
-    #            area_ref = int(t_ref * half_width)
+            # Translate the crossover point to a point in the array of the chromosome calculating delta_x as the container width
             
-    #            if area_child_1 not in range(int(area_ref - 10), int(area_ref +10)) or area_child_2 not in range(int(area_ref - 10), int(area_ref +10)):
-    #                print("area out of bounds after crossover for children individual ", i," or ",i+number_of_couples)
-    #                print("the area for child 1 was ",area_child_1," and child 2 was ",area_child_2)
-    #                print("the area for parent 1 was ",area_parent_1," and parent 2 was ",area_parent_2)
-    #                print("Population parents was ",population_parents)
-    #                print("parent 1 was number ",parent_1_index," and parent 2 was number ",parent_2_index)
-    #                print("Population children became ", population_children)
-    #                sys.exit('GA stopped due to unequal area with reference panel after crossover')
-#            
-        return population_children
+            Delta_x = ((0.5*W) / NumberOfContainers) #0.5 because of the symmetry constraint
+            
+            # Exchange the chromosomes between both parents
+
+            Child1Left = np.append(Parent1.Thickness[:int(CrossoverPoint*Delta_x)], Parent2.Thickness[int(CrossoverPoint*Delta_x):HalfChromosome])                # left side of Parent1 and right side of Parent2
+            Child2Left = np.append(Parent2.Thickness[:int(CrossoverPoint*Delta_x)], Parent1.Thickness[int(CrossoverPoint*Delta_x):HalfChromosome])                # left side of Parent2 and right side of Parent1
+            
+            Child1Chromosome = np.append(Child1Left,np.flipud(Child1Left))
+            Child2Chromosome = np.append(Child2Left,np.flipud(Child2Left))
+            
+            import database_connection
+            Child1 = database_connection.Database.RetrieveChromosomeDataframe() #empty chromosome dataframes
+            Child2 = database_connection.Database.RetrieveChromosomeDataframe()
+            
+            # Place Children in Chromsome dataframes
+            
+            Child1.Thickness = Child1Chromosome
+            Child2.Thickness = Child2Chromosome
+            Width = np.linspace(1,W, W)
+            Child1.Width = Width
+            Child2.Width = Width
+            
+            return Child1, Child2
         
     
     def CrossoverUniform(self):
@@ -470,93 +428,133 @@ class GeneticAlgorithm:
         
         return population_children
         
+        
+    def cross_over(self, bc, material, population_selected):
+        
+        elitism_settings = bc.ix["Elitism"]
+        
+        if elitism_settings == "True":
+            population_children, number_of_elites = genetic_algorithm.apply_elites(self,bc,population_selected)
+            print("Elitism has been used")
+            
+        elif elitism_settings == "Inverse":
+            population_children = genetic_algorithm.apply_elites_inverse(self,bc,population_selected)
+            
+        else:
+            population_children = genetic_algorithm.children_population(self, bc)
+            number_of_elites = 0
+        
+        cross_over_method = bc.ix["Cross-over Method"]
+        population_parents = population_selected
+        population_parents = genetic_algorithm.pairing_probability(self, bc, population_children, population_parents)
+        
+        if cross_over_method == "Single Point":
+            population_children = genetic_algorithm.single_point_crossover(self, bc, population_children, population_parents)
+        
+        elif cross_over_method == "Addition":
+            population_children = genetic_algorithm.addition_crossover(self, bc, population_children, population_parents)
+
+        return population_children, number_of_elites
+
+
+        
     """
     #==============================================================================
     #                      7. Mutation of Offspring population  
     #==============================================================================
     """
     
-    def MutatePopulation():
+    def MutatePopulation(Chromosome, MutationOperator, Pm, NumberOfContainers, W, t_dict, Constraints):
         """
-        Output:
+        This method outputs a mutated chromosome of a single solution, in GA terms "chromosome", whose chromosome has been mutated. 
+        Mutation can be performed in different ways, which is determined by the chosen MutationOperator.
+        For each way of mutating, a different method has been made.
         """
         
-        mutation_criteria = bc.ix["Mutation Set"]    
-            
-        if mutation_criteria == "Set 1":
-            population_children = genetic_algorithm.mutate(self, bc, population_children, number_of_elites)
-            
-        if mutation_criteria == "Set 2":
-            population_children = genetic_algorithm.mutate_swap(self, bc, population_children, number_of_elites)
+        import genetic_algorithm
         
-        if mutation_criteria == "Set 3":
-            population_children = genetic_algorithm.mutate_swap_ref_5_10cont_8thick(self, bc, population_children, number_of_elites)
+        # Apply the given constraints to the mutation operations
+        
+        if Constraints.Plate_Symmetry[0] == str(True):
+            
+            # Calculate the number of variable containers and their container width delta_x
+            
+            NumberOfContainersSymmetry = int(0.5 * NumberOfContainers)
+            delta_x = int((0.5*W) / NumberOfContainersSymmetry)
+        
+            NumberOfContainers =  NumberOfContainersSymmetry
+            
+        else:
+            delta_x = int(W / NumberOfContainers)
+
+        
+        if MutationOperator == "Set 1":
+            ChromosomeMutated = genetic_algorithm.GeneticAlgorithm.MutateRandom(Chromosome, Pm, NumberOfContainers, W, t_dict, delta_x, Constraints)
+            
+        elif MutationOperator == "Set 2":
+            ChromosomeMutated = genetic_algorithm.GeneticAlgorithm.MutateSwap()
+        
+        elif MutationOperator == "Set 3":
+            ChromosomeMutated = genetic_algorithm.GeneticAlgorithm.mutate_swap_ref_5_10cont_8thick()
 
         else:
             pass
         
-        #print(population_children)
-        return population_children
+        return ChromosomeMutated
         
             
-    def mutate(self, bc, population_children, number_of_elites):
+    def MutateRandom(Chromosome, Pm, NumberOfContainers, W, t_dict, delta_x, Constraints):
         """
-        Mutate for highly refined crenellation patterns, not the simple cases. Only review if necessary at this point.
+        This method mutates provided Chromosome.
+        Each container has a probability to mutate to another thickness of Pm.
         """
-        #print(number_of_elites)
-        t_ref = bc.ix["Reference thickness"]
-        pop_size_all = bc.ix["Population size"]
-        pop_size_non_elites = pop_size_all - number_of_elites
-        mutation_rate = bc.ix["Mutation Rate"]
-        chromosome_length = int(len(population_children["Chromosome"][1])/2)
-        mutation_width = bc.ix["Mutation Width"]
-        number_of_mutations = int((mutation_rate * pop_size_non_elites * chromosome_length)/(mutation_width*chromosome_length))  #subtract the elites
-        total_locations = int(pop_size_all * chromosome_length)
-        
-        start_mutation_location =int(number_of_elites * chromosome_length)
-        
-        mutation_locations = np.random.randint(start_mutation_location,total_locations, number_of_mutations)
-        
-        print("Starting mutation of children")
-        for i in range(0,number_of_mutations):
-            """
-            Pick one of the mutation locations and find the respective chromosome
-            """
-            individual_no = int(np.floor(mutation_locations[i] / chromosome_length))
-            mutation_location = mutation_locations[i] - int(individual_no * chromosome_length)
-            individual_chromosome = population_children["Chromosome"][individual_no+1]
-            """
-            Expand the number of containers subjected to the mutation operation
-            """
-            bandwidth_left = int(max(0,mutation_location - mutation_width * chromosome_length))
-            bandwidth_right = int(min(chromosome_length,mutation_location + mutation_width * chromosome_length))
-            thickness_left = individual_chromosome[bandwidth_left]
-            thickness_right = individual_chromosome[bandwidth_right]
-            """
-            Calculate the A_balance of the existing section of the chromosome
-            """
-            current_balance = np.sum((individual_chromosome[bandwidth_left:bandwidth_right+1]) - t_ref)
-            """
-            Re-initialize crenellation pattern for the mutation range
-            """
-            individual_chromosome, mutated_balance,t = crenellation.rand_thickness_mutation(self, individual_chromosome, bandwidth_left, bandwidth_right, thickness_left, thickness_right, bc)
-            """
-            Apply balance for the mutation range
-            """
-            individual_chromosome = crenellation.apply_balance_mutation(self, t, bandwidth_left, bandwidth_right, current_balance, mutated_balance, individual_chromosome, bc)
-            """
-            Mirror the mutated region of the chromosome to the right part of the chromosome
-            """
-            individual_chromosome_left_half = individual_chromosome[:chromosome_length]
-            individual_chromosome = np.append(individual_chromosome_left_half,np.flipud(individual_chromosome_left_half))
-            """
-            Insert mutated chromosome back into the population
-            """
-            population_children["Chromosome"][individual_no+1] = individual_chromosome
-            
-        return population_children
+        # Calculate the number of features (in the case of crenellation, container thicknesses) will be mutated. 
+        # This depends on the NumberOfContainers, the population size and the Mutation Rate Pm.
 
-    def mutate_swap(self, bc, population_children, number_of_elites):
+        # Loop through containers in the chromosome
+                    
+        for ContainerNumber in range(1,NumberOfContainers+1):
+            
+            # Determine whether mutation of the container thickness will take place 
+            
+            MutationRandomGenerator = np.random.uniform(0.0,1.0)
+            
+            if MutationRandomGenerator < Pm:
+                print("Mutation took place")
+                
+                # Retrieve the current container thickness
+
+                CurrentContainerThickness = Chromosome.Thickness[(ContainerNumber*delta_x)]
+                
+                # Randomly choose another thickness from the thickness dictionary t_dict
+                
+                MutatedContainerThickness = CurrentContainerThickness 
+                
+                while MutatedContainerThickness == CurrentContainerThickness:
+                    
+                    NumberOfThicknesses = np.arange(0,len(t_dict))
+                    MutatedContainerThicknessIndex = str(np.random.choice(NumberOfThicknesses))
+                    MutatedContainerThickness = float(t_dict[MutatedContainerThicknessIndex])
+                    
+                # Change the container thickness to the mutated thickness in the chromosome
+                
+                Chromosome.Thickness[(ContainerNumber-1)*delta_x : ContainerNumber*delta_x] = MutatedContainerThickness
+                
+                # If the symmetry condition is true, mirror the change to the other symmetrical half of the chromosome
+                
+                if Constraints.Plate_Symmetry[0] == str(True):
+                
+                    ChromosomeLeft = Chromosome.Thickness[:(NumberOfContainers*delta_x)]
+                    ChromosomeRight = np.flipud(ChromosomeLeft)
+                    
+                    Chromosome.Thickness[(NumberOfContainers*delta_x):] = ChromosomeRight
+                
+            else:
+                continue
+                
+        return Chromosome
+
+    def MutateSwap(self, bc, population_children, number_of_elites):
         """
         Mutation through swapping of material for highly refined crenellation patterns. Only review if necessary.
         """
@@ -728,6 +726,23 @@ class GeneticAlgorithm:
         #print("Population with elites applied",population_children)
         
         return population_children
+    
+    """
+    #==============================================================================
+    #                    Termination Conditions
+    #==============================================================================
+    """
+        
+    def CheckTermination(PopulationCurrent, Generation):
+        
+        # add in unique termination conditions based on fitness values
+        
+        TerminationCondition = False
+        
+        
+        return TerminationCondition
+        
+        
         
         
     """
@@ -777,11 +792,72 @@ class GeneticAlgorithm:
 #        
 #        return population_children
 #        
+
+    def MutateRandom_OLD(PopulationOffspring, Pm):
+        """
+        Mutate for highly refined crenellation patterns, not the simple cases. Only review if necessary at this point.
+        """
+        #print(number_of_elites)
+        t_ref = bc.ix["Reference thickness"]
+        pop_size_all = bc.ix["Population size"]
+        pop_size_non_elites = pop_size_all - number_of_elites
+        mutation_rate = bc.ix["Mutation Rate"]
+        chromosome_length = int(len(population_children["Chromosome"][1])/2)
+        mutation_width = bc.ix["Mutation Width"]
+        number_of_mutations = int((mutation_rate * pop_size_non_elites * chromosome_length)/(mutation_width*chromosome_length))  #subtract the elites
+        total_locations = int(pop_size_all * chromosome_length)
+        
+        start_mutation_location =int(number_of_elites * chromosome_length)
+        
+        mutation_locations = np.random.randint(start_mutation_location,total_locations, number_of_mutations)
+        
+        print("Starting mutation of children")
+        for i in range(0,number_of_mutations):
+            """
+            Pick one of the mutation locations and find the respective chromosome
+            """
+            individual_no = int(np.floor(mutation_locations[i] / chromosome_length))
+            mutation_location = mutation_locations[i] - int(individual_no * chromosome_length)
+            individual_chromosome = population_children["Chromosome"][individual_no+1]
+            """
+            Expand the number of containers subjected to the mutation operation
+            """
+            bandwidth_left = int(max(0,mutation_location - mutation_width * chromosome_length))
+            bandwidth_right = int(min(chromosome_length,mutation_location + mutation_width * chromosome_length))
+            thickness_left = individual_chromosome[bandwidth_left]
+            thickness_right = individual_chromosome[bandwidth_right]
+            """
+            Calculate the A_balance of the existing section of the chromosome
+            """
+            current_balance = np.sum((individual_chromosome[bandwidth_left:bandwidth_right+1]) - t_ref)
+            """
+            Re-initialize crenellation pattern for the mutation range
+            """
+            individual_chromosome, mutated_balance,t = crenellation.rand_thickness_mutation(self, individual_chromosome, bandwidth_left, bandwidth_right, thickness_left, thickness_right, bc)
+            """
+            Apply balance for the mutation range
+            """
+            individual_chromosome = crenellation.apply_balance_mutation(self, t, bandwidth_left, bandwidth_right, current_balance, mutated_balance, individual_chromosome, bc)
+            """
+            Mirror the mutated region of the chromosome to the right part of the chromosome
+            """
+            individual_chromosome_left_half = individual_chromosome[:chromosome_length]
+            individual_chromosome = np.append(individual_chromosome_left_half,np.flipud(individual_chromosome_left_half))
+            """
+            Insert mutated chromosome back into the population
+            """
+            population_children["Chromosome"][individual_no+1] = individual_chromosome
+            
+        return population_children
+
+
+
+
     """
     Single Point Crossover - OLD - using feasible crossover points as a method to guide search within feasible solution space
     """
 
-    def CrossoverSinglePoint(ParentSelected1, ParentSelected2, PopulationOffspring, Pc, Constraints): #previously single_point_crossover
+    def CrossoverSinglePoint_OLD(ParentSelected1, ParentSelected2, PopulationOffspring, Pc, Constraints): #previously single_point_crossover
         """
         This method recombines the chromosomes of two parent solutions using the principles of single point crossover
         """

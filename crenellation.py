@@ -95,6 +95,7 @@ class CrenellationPattern:
             
             Delta_x = int(W / NumberOfContainers)
             
+            
             # Randomly choose the thickness levels for each container
                 
             NumberOfThicknessLevels = len(t_dict)

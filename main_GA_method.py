@@ -37,6 +37,7 @@ import database_connection
 BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
 MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
 CONSTRAINTS = database_connection.Database.RetrieveConstraints(BC.Constraint_ID[0])
+
 """
 #==============================================================================
 #                           Genetic algorithm START
@@ -75,113 +76,94 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
         
             PopulationCurrent = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
             
-            for Individual in range(1,int(BC.N_pop)+1):
+            for IndividualNumber in range(1,int(BC.N_pop)+1):
                 
-                PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationPrevious.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
-       
-        """
-        Step 2.a Store evaluated individuals for visualizations
-        """  
-    #    population.generation_data(population_parents_evaluated, g, NumberOfGenerations)
+                PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationOffspring.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
+                PopulationCurrent.Chromosome[IndividualNumber] = PopulationOffspring.Chromosome[IndividualNumber]
         
+                
+        """
+        Step 2.a Checking the Termination Condition 
+        """
+              
+        TerminationCondition = genetic_algorithm.GeneticAlgorithm.CheckTermination(PopulationCurrent, Generation)
+        
+        if TerminationCondition == True:
+            
+            PopulationFinal = PopulationCurrent
+        
+        else: 
+            # Store information on the current population for the family tree
+            pass
         """
         Step 3. Select the fittest solutions
         """
         PopulationCurrentSelected = genetic_algorithm.GeneticAlgorithm.SelectSurvivingPopulation(PopulationCurrent, BC.Rs[0])
     
-        """
-        Step 4. Determine probability of reproduction for each solution
-        """
+        if BC.Crossover[0] == str(True):
         
-        PopulationParents = genetic_algorithm.GeneticAlgorithm.CalculateReproductionProbParents(PopulationCurrentSelected, BC.RankingOperator[0])
-        
-        """
-        Step 5. Select (two) solutions from parent population for reproduction
-        """
-        
-        PopulationOffspring = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
-
-        while PopulationOffspring.tail(1).Chromosome[BC.N_pop[0]] == None: #keep recombining until the entire PopulationOffspring is filled with solutions
-            
-            ParentSelected1, ParentSelected2 = genetic_algorithm.GeneticAlgorithm.SelectParents(PopulationParents)
-            
             """
-            Step 6. Crossover of the selected parent solutions
+            Step 4. Determine probability of reproduction for each solution
             """
             
-            PopulationOffspring = genetic_algorithm.GeneticAlgorithm.RecombineParents(ParentSelected1, ParentSelected2, PopulationOffspring, BC.Pc[0], BC.CrossoverOperator[0], CONSTRAINTS)
+            PopulationParents = genetic_algorithm.GeneticAlgorithm.CalculateReproductionProbParents(PopulationCurrentSelected, BC.RankingOperator[0])
             
+            """
+            Step 5. Select (two) solutions from parent population for reproduction
+            """
+            
+            PopulationOffspring = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
+    
+            while PopulationOffspring.tail(1).Chromosome[BC.N_pop[0]] is None: #keep recombining until the entire PopulationOffspring is filled with solutions
+                
+                ParentSelected1, ParentSelected2 = genetic_algorithm.GeneticAlgorithm.SelectParents(PopulationParents)
+                
+                """
+                Step 6. Crossover of the selected parent solutions
+                """
+                
+                PopulationOffspring = genetic_algorithm.GeneticAlgorithm.RecombineParents(PopulationParents.Chromosome[ParentSelected1], PopulationParents.Chromosome[ParentSelected2], PopulationOffspring, BC.Pc[0], BC.W[0], BC.CrossoverOperator[0], CONSTRAINTS, BC.NumberOfContainers[0])
+            
+        else:
+            PopulationOffspring = PopulationCurrentSelected # if crossover has been disabled, the surviving population becomes the offspring population
             
         """
         Step 7. Mutation of Offspring population
         """
         
-        PopulationOffspringMutated = genetic_algorithm.GeneticAlgorithm.MutatePopulation(PopulationOffspring, BC.Pm)
+        if BC.Mutation[0] == str(True):
         
-    
+            for IndividualNumber in range(1,len(PopulationOffspring)+1):
+                print("Starting mutation of the Offspring Population for Individual...", IndividualNumber)
+                PopulationOffspring.Chromosome[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.MutatePopulation(PopulationOffspring.Chromosome[IndividualNumber], BC.MutationOperator[0], BC.Pm[0], BC.NumberOfContainers[0], BC.W[0],  BC.T_dict[0], CONSTRAINTS)
         
-        """
-        Step 7.a Checking the Termination Condition for a Run
-        """
-        
-        TerminationCondition = genetic_algorithm.GeneticAlgorithm.CheckTermination()
-        
-        if TerminationCondition == True:
-            
-            PopulationFinal = PopulationOffspringMutated
-            
-        
-            #insert loop to evaluate fitness function of each individual
-            
-            break
-        
-        else: #store Offspring Population as the Previous Population for the next Generation
-            
-            #insert line to store the population information in the database
-        
-            PopulationPrevious = PopulationOffspringMutated
-            
-            continue
-            
-        """
-        Step 7.b Checking the Termination Condition for the Algorithm
-        """
-        
-        
-        termination_overview = population.population_convergence(bc, population_parents_evaluated, g, convergence_overview)
 
     """
     #==============================================================================
-    # Genetic Algorithm END
+    #                              Genetic Algorithm END
     #==============================================================================
     """    
-        
-    """
-    #==============================================================================
-    # Visualization of Results
-    #==============================================================================
-    """  
     
-    visuals = visual(population_parents_evaluated, bc,material, population, run , g)
+"""
+#==============================================================================
+#                           Visualization of Results
+#==============================================================================
+"""  
 
-    #fitness_plot = visual.fitness_plot(population_eval,g)
-    crennellation_fittest = visual.fittest_crenellation(convergence_overview, run)
+import visuals
 
-    #individual_plot = visual.create_plot(population_eval, bc,material, individual_no=8)
-    #individual_plot = visual.create_plot(population_eval, bc,material, individual_no=4)
-    
-    convergence_overview_plot = visuals.convergence(convergence_overview, run, bc)
-    
-    """
-    Store the GA data per run to CSV file
-    """
-    #convergence_overview.to_csv("reference_Lu_GA_convergence_run_"+str(run)+"")
-    convergence_overview.to_pickle("reference_Lu_GA_convergence_run_"+str(run)+"")
+
+
+"""
+Store the GA data per run to CSV file
+"""
+
+convergence_overview.to_pickle("reference_Lu_GA_convergence_run_"+str(run)+"")
 
 
 """  
 #==============================================================================
-# Runtime of the algorithm
+#                          Runtime of the algorithm
 #==============================================================================
 """
 time_elapsed = (time.clock() - time_start)
