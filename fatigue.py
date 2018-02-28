@@ -77,12 +77,12 @@ class FatigueCalculations:
         """
         Evaluate the effective stress Sigma_Eff
         """
-        FatigueCalculations.sigma_eff = S_max / (2 * FatigueCalculations.Area)  
+        FatigueCalculations.Sigma_eff = S_max / (2 * FatigueCalculations.Area)  
         
         """
         Evaluate the Stress Intensity Factor K
         """
-        FatigueCalculations.K = FatigueCalculations.sigma_eff * np.sqrt(np.pi*a_meters) 
+        FatigueCalculations.K = FatigueCalculations.Sigma_eff * np.sqrt(np.pi*a_meters) 
         
         """
         Calculate the crack growth rate used the Paris relation

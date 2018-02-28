@@ -48,10 +48,13 @@ class CrenellationPattern:
         return t_pattern      
         
         
-    def ConstructChromosomeRandom(NumberOfContainers, delta_a, W, t_dict, Constraints): #previous construct_chromosome
+    def ConstructChromosomeRandom(n_total, delta_a, W, t_dict, Constraints): #previous construct_chromosome
         """
-        Construct chromosome with crenellation pattern based on boundary conditions given (NumberOfContainers, W, t_dict).
+        Construct chromosome with crenellation pattern based on boundary conditions given (n_total, W, t_dict).
         In the problem of crenellation patterns, the chromosome consists out of an array of thickness levels.
+        """
+        """
+        Equation: 
         """
         
         import database_connection
@@ -63,20 +66,20 @@ class CrenellationPattern:
             W = int(0.5*W)        
             Width = np.linspace(1,2*W, 2*W)
             ThicknessLeft  = np.zeros(np.int(W/delta_a))
-            NumberOfContainers = int(0.5*NumberOfContainers)
+            n_total = int(0.5*n_total)
             
             # Calculate the container width delta_x
             
-            Delta_x = int(W / NumberOfContainers)
+            Delta_x = int(W / n_total)
             
             # Randomly choose the thickness levels for each container
                 
             NumberOfThicknessLevels = len(t_dict)
-            ThicknessLevelsChosen = np.random.choice(NumberOfThicknessLevels,NumberOfContainers)
+            ThicknessLevelsChosen = np.random.choice(NumberOfThicknessLevels,n_total)
             
             # Project thickness levels onto the Chromosome using the container width Delta_x and real thickness dictionary t_dict
             
-            for i in range(1,NumberOfContainers+1):
+            for i in range(1,n_total+1):
     
                 ThicknessLeft[(i-1)*Delta_x:(i)*Delta_x] = t_dict[str(ThicknessLevelsChosen[i-1])]
                           
@@ -94,17 +97,17 @@ class CrenellationPattern:
     
             # Calculate the container width delta_x
             
-            Delta_x = int(W / NumberOfContainers)
+            Delta_x = int(W / n_total)
             
             
             # Randomly choose the thickness levels for each container
                 
             NumberOfThicknessLevels = len(t_dict)
-            ThicknessLevelsChosen = np.random.choice(NumberOfThicknessLevels,NumberOfContainers)
+            ThicknessLevelsChosen = np.random.choice(NumberOfThicknessLevels,n_total)
             
             # Project thickness levels onto the Chromosome using the container width Delta_x and real thickness dictionary t_dict
             
-            for i in range(1,NumberOfContainers+1):
+            for i in range(1,n_total+1):
     
                 Thickness[(i-1)*Delta_x:(i)*Delta_x] = t_dict[str(ThicknessLevelsChosen[i-1])]
             
@@ -660,6 +663,18 @@ class CrenellationPattern:
         IntegralResult = (x * np.sqrt(A))   - ((k) * np.sqrt(A_1))
 
         return IntegralResult
+        
+    def CalculatePlateArea(Thickness,Delta_a):
+        """
+        Calculate the total plate area based on the thickness function t(x) and the crack increment Delta_a. 
+        total_a = a_max - a_0
+        NumberOfIncrements = total_a / Delta_a               
+        """
+        Area = 0
+        for CrackIncrement in range(0,len(Thickness)):
+            Area += Thickness[CrackIncrement]* Delta_a
+            
+        return Area
         
         
         
