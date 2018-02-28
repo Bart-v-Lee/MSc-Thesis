@@ -54,24 +54,26 @@ class FatigueVisuals:
         
         PopulationInitialRanked = PopulationInitial.sort_values("Fitness", ascending=False, kind = 'mergesort')
         
-        pp.figure(1,figsize=(10,8))
-        pp.axis([0,150,0,6])
+        fig, axes = pp.subplots(nrows=2, ncols=3, figsize=(15,6))
         
-        for IndividualNumber in range(1,2):
-            pp.subplot(212)
-            pp.plot(PopulationFinal.Chromosome[IndividualNumber].Thickness)
-            pp.fill_between(PopulationFinal.Chromosome[IndividualNumber].Width, 0, PopulationFinal.Chromosome[IndividualNumber].Thickness, facecolor='green')
-
-            pp.subplot(211)
-            pp.plot(PopulationInitial.Chromosome[IndividualNumber].Thickness)
-            pp.fill_between(PopulationInitialRanked.Chromosome[IndividualNumber].Width, 0, PopulationInitialRanked.Chromosome[IndividualNumber].Thickness)
-
+        for IndividualNumber in range(1,4):
             
-        pp.subplot(212)
-        pp.title('Top 3 Crenellation Patterns within the Final Population')
+            # Final Population Plots 
+            
+            i = IndividualNumber -1
+                    
+            axes[1,i].plot(PopulationFinal.Chromosome[IndividualNumber].Thickness)
+            axes[1,i].fill_between(PopulationFinal.Chromosome[IndividualNumber].Width, 0, PopulationFinal.Chromosome[IndividualNumber].Thickness, facecolor='green')
+            
+            # Initial Population Figures
+            
+            axes[0,i].plot(PopulationInitial.Chromosome[IndividualNumber].Thickness)
+            axes[0,i].fill_between(PopulationInitialRanked.Chromosome[IndividualNumber].Width, 0, PopulationInitialRanked.Chromosome[IndividualNumber].Thickness)
+
+                
+        axes[1,1].set_title('Top 3 Crenellation Patterns within the Final Population')
         
-        pp.subplot(211)
-        pp.title('Top 3 Crenellation Patterns within the Initial Population')
+        axes[0,1].set_title('Top 3 Crenellation Patterns within the Initial Population')
         
 
         

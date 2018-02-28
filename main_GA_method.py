@@ -54,7 +54,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
     
     import genetic_algorithm
     Population = genetic_algorithm.Population(BC.N_pop[0]) #object initiated with its instance variables
-    PopulationInitial = genetic_algorithm.Population.InitializePopulation(BC.NumberOfContainers[0], BC.Delta_a[0], BC.W[0], BC.N_pop[0], BC.T_dict[0], BC.SeedSettings[0], BC.SeedNumber[0], CONSTRAINTS) 
+    PopulationInitial = genetic_algorithm.Population.InitializePopulation(BC.n_total[0], BC.Delta_a[0], BC.W[0], BC.N_pop[0], BC.T_dict[0], BC.SeedSettings[0], BC.SeedNumber[0], CONSTRAINTS) 
     
     for Generation in range(0,int(BC.NumberOfGenerations)): 
         print("Generation "+str(Generation)+" has started")
@@ -124,7 +124,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 Step 6. Crossover of the selected parent solutions
                 """
                 
-                PopulationOffspring = genetic_algorithm.GeneticAlgorithm.RecombineParents(PopulationParents.Chromosome[ParentSelected1], PopulationParents.Chromosome[ParentSelected2], PopulationOffspring, BC.Pc[0], BC.W[0], BC.CrossoverOperator[0], CONSTRAINTS, BC.NumberOfContainers[0])
+                PopulationOffspring = genetic_algorithm.GeneticAlgorithm.RecombineParents(PopulationParents.Chromosome[ParentSelected1], PopulationParents.Chromosome[ParentSelected2], PopulationOffspring, BC.Pc[0], BC.W[0], BC.CrossoverOperator[0], CONSTRAINTS, BC.n_total[0])
             
         else:
             PopulationOffspring = PopulationCurrentSelected # if crossover has been disabled, the surviving population becomes the offspring population
@@ -137,7 +137,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
         
             for IndividualNumber in range(1,len(PopulationOffspring)+1):
                 print("Starting mutation of the Offspring Population for Individual...", IndividualNumber)
-                PopulationOffspring.Chromosome[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.MutatePopulation(PopulationOffspring.Chromosome[IndividualNumber], BC.MutationOperator[0], BC.Pm[0], BC.NumberOfContainers[0], BC.W[0],  BC.T_dict[0], CONSTRAINTS)
+                PopulationOffspring.Chromosome[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.MutatePopulation(PopulationOffspring.Chromosome[IndividualNumber], BC.MutationOperator[0], BC.Pm[0], BC.n_total[0], BC.W[0],  BC.T_dict[0], CONSTRAINTS)
         
 
     """
@@ -167,7 +167,7 @@ visuals.FatigueVisuals.ShowTop3CrenellationPatterns(PopulationFinal, PopulationI
 Store the GA data per run to CSV file
 """
 
-convergence_overview.to_pickle("reference_Lu_GA_convergence_run_"+str(run)+"")
+#convergence_overview.to_pickle("reference_Lu_GA_convergence_run_"+str(run)+"")
 
 
 """  

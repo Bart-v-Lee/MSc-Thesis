@@ -24,7 +24,7 @@ class Population:
 
         self.N_pop = N_pop
 
-    def InitializePopulation(NumberOfContainers, delta_a, W, N_pop, t_dict, SeedSettings, SeedNumber, Constraints): #previous initialize_population
+    def InitializePopulation(n_total, delta_a, W, N_pop, t_dict, SeedSettings, SeedNumber, Constraints): #previous initialize_population
         """
         Initializes a population of individuals of size N_pop, either through random or by pre-determined choice (e.g. a seed design). Depending on the SeedSettings, a number of 
         pre-designed solutions are scaled to the given boundary conditions (delta_x, W) and inserted in the initial population. The remaining individuals are sampled randomly from
@@ -64,7 +64,7 @@ class Population:
                 PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber,delta_a,W,t_dict, Constraints)
         
             else:
-                PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeRandom(NumberOfContainers,delta_a, W, t_dict, Constraints)
+                PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeRandom(n_total,delta_a, W, t_dict, Constraints)
                 
        
         return PopulationInitial
@@ -118,10 +118,13 @@ class GeneticAlgorithm:
         Since the objective function can change depending on the experiment, this method chooses the right one
         Furthermore it shows on overview of the equations for each objective function
         """
-
+        
         import fatigue
         
         if Fitness_Function_ID == "Set 1":
+            """
+            Objective function: F = N_life
+            """
             
             FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
             
@@ -133,14 +136,42 @@ class GeneticAlgorithm:
             
             
         elif Fitness_Function_ID == "Set 2":
+            """
+            Objective function F = N_life / A
+            """
+            print("Objective function 2")
             
-            pass
+            import crenellation
+            FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
+            Area = crenellation.CrenellationPattern.CalculatePlateArea(Chromosome.Thickness,Delta_a)
+            
+            FitnessValue = FatigueLife / Area
             
             
         elif Fitness_Function_ID == "Set 3":
+            """
+            Objective function F = N_life / A^m
+            """
+            print("Objective function 3")
+            import crenellation
+            FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
+            print(FatigueCalculations)
+
+            Area = crenellation.CrenellationPattern.CalculatePlateArea(Chromosome.Thickness,Delta_a)
             
-            pass
+            FitnessValue = FatigueLife / (Area**m)
+            
+            
+        elif Fitness_Function_ID == "Set 4":
+            """
+            Objective function F = x1 * N_life,1 + x2 * N_life,2 + x3 * N_life,3
+            """
+            FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
+
         
+            
+            
+            
         else:
             pass
         
@@ -159,6 +190,9 @@ class GeneticAlgorithm:
     def SelectSurvivingPopulation(PopulationCurrent, Rs):
         """
         Selects the highest scoring solutions based on fitness. The number of solutions selected is determined by the population size N_pop and the selection rate Rs.
+        """
+        """
+        Equation: 
         """
 
         # Step 1. Rank individuals based on fitness values
@@ -219,7 +253,6 @@ class GeneticAlgorithm:
         """
         Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness rank amongst other solutions in the population.
         """
-    
         
 #        selection_rate = bc.ix["Selection Rate"]
 #        pop_size = int(bc.ix["Population size"])
@@ -291,7 +324,7 @@ class GeneticAlgorithm:
     #           6. Crossover of selected parent solutions
     #==============================================================================
     """  
-    def RecombineParents(Parent1, Parent2, PopulationOffspring, Pc, W, CrossoverOperator, Constraints, NumberOfContainers): #previously recombination
+    def RecombineParents(Parent1, Parent2, PopulationOffspring, Pc, W, CrossoverOperator, Constraints, n_total): #previously recombination
         """
         Determine whether the Offspring is created by crossover or that the parents are passed into the OffspringPopulation without any crossover. 
         Crossover happens with a probability of Pc 
@@ -307,7 +340,7 @@ class GeneticAlgorithm:
             import genetic_algorithm
     
             if CrossoverOperator == "Set 1":
-                Child1, Child2 = genetic_algorithm.GeneticAlgorithm.CrossoverSinglePoint(Parent1, Parent2, PopulationOffspring, W, NumberOfContainers, Constraints)
+                Child1, Child2 = genetic_algorithm.GeneticAlgorithm.CrossoverSinglePoint(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints)
                 
             elif CrossoverOperator == "Set 2":
                 PopulationOffspring  = genetic_algorithm.uniform_cross_over()
@@ -350,7 +383,7 @@ class GeneticAlgorithm:
     #==============================================================================
     """    
 
-    def CrossoverSinglePoint(Parent1, Parent2, PopulationOffspring, W, NumberOfContainers, Constraints): #previously single_point_crossover
+    def CrossoverSinglePoint(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints): #previously single_point_crossover
         """
         This method recombines the chromosomes of two parent solutions using the principles of single point crossover
         """
@@ -363,13 +396,13 @@ class GeneticAlgorithm:
             """
             # Choose the crossover point randomly
             
-            NumberOfCrossoverPoints = NumberOfContainers-1
+            NumberOfCrossoverPoints = n_total-1
             CrossoverPoint = int(np.random.choice(NumberOfCrossoverPoints,1))+1
             HalfChromosome = int(0.5*W)
             
             # Translate the crossover point to a point in the array of the chromosome calculating delta_x as the container width
             
-            Delta_x = ((0.5*W) / NumberOfContainers) #0.5 because of the symmetry constraint
+            Delta_x = ((0.5*W) / n_total) #0.5 because of the symmetry constraint
             
             # Exchange the chromosomes between both parents
 
@@ -463,7 +496,7 @@ class GeneticAlgorithm:
     #==============================================================================
     """
     
-    def MutatePopulation(Chromosome, MutationOperator, Pm, NumberOfContainers, W, t_dict, Constraints):
+    def MutatePopulation(Chromosome, MutationOperator, Pm, n_total, W, t_dict, Constraints):
         """
         This method outputs a mutated chromosome of a single solution, in GA terms "chromosome", whose chromosome has been mutated. 
         Mutation can be performed in different ways, which is determined by the chosen MutationOperator.
@@ -478,17 +511,17 @@ class GeneticAlgorithm:
             
             # Calculate the number of variable containers and their container width delta_x
             
-            NumberOfContainersSymmetry = int(0.5 * NumberOfContainers)
-            delta_x = int((0.5*W) / NumberOfContainersSymmetry)
+            n_totalSymmetry = int(0.5 * n_total)
+            delta_x = int((0.5*W) / n_totalSymmetry)
         
-            NumberOfContainers =  NumberOfContainersSymmetry
+            n_total =  n_totalSymmetry
             
         else:
-            delta_x = int(W / NumberOfContainers)
+            delta_x = int(W / n_total)
 
         
         if MutationOperator == "Set 1":
-            ChromosomeMutated = genetic_algorithm.GeneticAlgorithm.MutateRandom(Chromosome, Pm, NumberOfContainers, W, t_dict, delta_x, Constraints)
+            ChromosomeMutated = genetic_algorithm.GeneticAlgorithm.MutateRandom(Chromosome, Pm, n_total, W, t_dict, delta_x, Constraints)
             
         elif MutationOperator == "Set 2":
             ChromosomeMutated = genetic_algorithm.GeneticAlgorithm.MutateSwap()
@@ -502,17 +535,17 @@ class GeneticAlgorithm:
         return ChromosomeMutated
         
             
-    def MutateRandom(Chromosome, Pm, NumberOfContainers, W, t_dict, delta_x, Constraints):
+    def MutateRandom(Chromosome, Pm, n_total, W, t_dict, delta_x, Constraints):
         """
         This method mutates provided Chromosome.
         Each container has a probability to mutate to another thickness of Pm.
         """
         # Calculate the number of features (in the case of crenellation, container thicknesses) will be mutated. 
-        # This depends on the NumberOfContainers, the population size and the Mutation Rate Pm.
+        # This depends on the n_total, the population size and the Mutation Rate Pm.
 
         # Loop through containers in the chromosome
                     
-        for ContainerNumber in range(1,NumberOfContainers+1):
+        for ContainerNumber in range(1,n_total+1):
             
             # Determine whether mutation of the container thickness will take place 
             
@@ -543,10 +576,10 @@ class GeneticAlgorithm:
                 
                 if Constraints.Plate_Symmetry[0] == str(True):
                 
-                    ChromosomeLeft = Chromosome.Thickness[:(NumberOfContainers*delta_x)]
+                    ChromosomeLeft = Chromosome.Thickness[:(n_total*delta_x)]
                     ChromosomeRight = np.flipud(ChromosomeLeft)
                     
-                    Chromosome.Thickness[(NumberOfContainers*delta_x):] = ChromosomeRight
+                    Chromosome.Thickness[(n_total*delta_x):] = ChromosomeRight
                 
             else:
                 continue
