@@ -110,7 +110,7 @@ class Population:
         
     def TransferPopulation(Generation, PopulationComposition):
         """
-        This method transfer the unique ID's from the chromosomes in one Generation to the next.
+        This method transfer the unique ID's from the chromosomes in one Generation to the next, including the fitness, as this is dependent on the chromosomes.
         It is used to maintain a historic overview of when each unique solution was found.
         """
         
@@ -120,62 +120,159 @@ class Population:
         return PopulationComposition
 
             
-    def StorePopulationInformation(Generation, PopulationComposition,  Operation, Parents, Pp, Fitness, Chromosome):
+    def StorePopulationData(PopulationDataframe,  Operation, Chromosome, Fitness, Pp, Parents):
         """
         This method stores new information in the PopulationComposition dictionary depending on the operation that has been performed.
-        The PopulationComposition dictionary contains all information of each generation for each run.
-        For each generation it stores information in a PopulationDataFrame, after which it is appended to a dictionary which can be accessed for each generation number.
+        The PopulationComposition dictionary contains all information on each individual of each generation during a single run of the algorithm.
+        For each generation it stores information in a PopulationDataFrame, after which it is appended to the PopulationComposition dictionary for analysis.
         """
-        
-        # Extract PopulationDataframe based on the current Generation
-        
-        PopulationDataframe = PopulationComposition['Gen '+str(Generation)]
         
         # Determine the new data based on the operation
         
         if Operation == "Initialization":
             """
-            New data points : chromosome 
+            New data points : chromosome, fitness
+            Looks up de given chromosome, and if it is found, the relationship is added. Otherwise a new record is made in the dataframe, therefore registering that a new solution has been found in this generation.
             """
             
-            # Check whether the chromosome historically exists in the PopulationDataframe
+            # Always add the first chromosome at the start of the initialization
             
-            for ChromosomeNumber in range(1,len(PopulationDataframe)):
-                
-                if PopulationDataframe.Chromosome[ChromosomeNumber] == Chromosome:
-                    # If it exists, add a new relation
+            if len(PopulationDataframe) == 0:
+                    NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness]})
+                    NewChromosome.Chromosome[0] = Chromosome
                     
-                    PopulationDataframe.Relations[ChromosomeNumber].append(list(0,"Initialization"))
+                    PopulationDataframe = PopulationDataframe.append(NewChromosome, ignore_index = True)
+                    PopulationDataframe.Relations[0] = {'Initialization':[0]}
+
+                    print("first chromosome added")
                     
+            else:
+            # Check whether the chromosome historically exists in the PopulationDataframe
+
+                for ChromosomeNumber in range(0,len(PopulationDataframe)):
                     
+                    if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
+                        # If it exists, add a new relation
+                        Exists = True
+                        ChromosomeNumber = ChromosomeNumber
+                        break
+                        
+                    else:
+                        Exists = False
+                        continue
+                      
+                if Exists == True:
+                    PopulationDataframe.Relations[ChromosomeNumber]['Initialization'].append(0)                    
                     
                 else:
-                    # Add new chromosome to the PopulationDataframe and provide it with unique ID
+                    # If it does not exist, add new chromosome with the respective fitness to the PopulationDataframe and provide it with unique ID
                     
-                    PopulationDataframe.Chromosome.append(Chromosome)
-
+                    NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness]} )
+                    NewChromosome.Chromosome[0] = Chromosome
                     
-            pass
+                    PopulationDataframe = PopulationDataframe.append(NewChromosome, ignore_index = True)
+                    PopulationDataframe.Relations[PopulationDataframe.index[-1]] = {'Initialization':[0]}
+                
+                                      
         
         elif Operation == "Evaluation":
             """
             New data points : fitness
+            Looks up the given chromosome and if the fitness is empty, adds it to the dataframe
             """
         
+            for ChromosomeNumber in range(0,len(PopulationDataframe)):
+                
+                if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
+                    
+                    PopulationDataframe.Fitness[ChromosomeNumber] = Fitness
+                    
+                else:
+                    continue
+
+            
         elif Operation == "Selection":
             """
             New data points : Pp, Pp_cum
+            Looks up the given chromosome and if adds the Pp to the chromosome
             """
-        
+            
+            # loop through each chromosome in the PopulationDataframe for the current Generation. Find the matching Chromosome and add the Pp value
+            
+            for ChromosomeNumber in range(0,len(PopulationDataframe)):
+                
+                
+                if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
+            
+                    PopulationDataframe.Pp[ChromosomeNumber] = PopulationDataframe.Pp[ChromosomeNumber] + Pp
+                    
+
+            
         elif Operation == "Crossover":
             """
             New data points : chromosome, parents
+            Looks up the given chromosome and if it is found, adds the relations of the parents. If it is not found, a new record of the chromosome is made. Therefore, indicating that a new solution has been found.
             """
         
+            # retrieve the unique chromosome ID's of the parents
+            
+            Parent1Thickness, Parent2Thickness = Parents[0].Thickness, Parents[1].Thickness
+            
+            for ChromosomeNumber in range(0,len(PopulationDataframe)):
+                
+                if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Parent1Thickness):
+                    
+                    Parent1_ID = ChromosomeNumber
+
+                if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Parent2Thickness):
+            
+                    Parent2_ID = ChromosomeNumber
+                    
+            # lookup chromosome in PopulationDataframe
+            
+            for ChromosomeNumber in range(0,len(PopulationDataframe)):
+                
+                if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
+
+                    ChromosomeNumber = ChromosomeNumber
+                    Exists = True
+                    break
+                
+                else:
+                    Exists = False
+                    continue
+            
+                
+            # Either add the new chromosome with relations, or if it already exists, add the relations of its parents
+                
+            if Exists == True:
+                """
+                Only add the relations
+                """
+                PopulationDataframe.Relations[ChromosomeNumber].append({'Crossover':[Parent1_ID,Parent2_ID]})                    
+
+            else:
+                """
+                Add the chromosome and relations
+                """
+            
+                NewChromosome = pd.DataFrame(data = {'Chromosome':Chromosome})
+                NewChromosome.Chromosome[0] = Chromosome
+                PopulationDataframe = PopulationDataframe.append(NewChromosome, ignore_index = True)
+                PopulationDataframe.Relations[PopulationDataframe.index[-1]] = {'Crossover':[Parent1_ID,Parent2_ID]}   
+                
+            
         elif Operation == "Mutation":
             """
             New data points : chromosome, parents
             """
+            
+            
+            
+            
+            
+            
+            
             
         elif Operation == "Elitism":
             """
@@ -192,10 +289,10 @@ class Population:
         
 
     
-
+        print(PopulationDataframe)
     
         
-        return PopulationComposition
+        return PopulationDataframe
         
         
 
@@ -341,7 +438,16 @@ class GeneticAlgorithm:
         elif RankingMethod == 'Tournament': #not developed yet at this point
             SelectionProbParents = genetic_algorithm.GeneticAlgorithm.Tournament()
             
-    
+        # insert the Pp for each chromosome in the PopulationComposition dictionary
+            
+        for IndividualNumber in range(1,len(SelectionProbParents)):
+            
+            global Generation
+            global PopulationComposition
+            
+            PopulationComposition['Gen '+str(Generation)] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)], Operation = "Selection", Chromosome = SelectionProbParents.Chromosome[IndividualNumber] , Fitness = 0, Pp = SelectionProbParents.Pp[IndividualNumber], Parents = 0)
+
+            
         return SelectionProbParents
 
 
@@ -452,12 +558,15 @@ class GeneticAlgorithm:
                 Child1, Child2 = genetic_algorithm.GeneticAlgorithm.CrossoverSinglePoint(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints)
                 
             elif CrossoverOperator == "Set 2":
+                # update this method, still old version
                 PopulationOffspring  = genetic_algorithm.uniform_cross_over()
                 
             elif CrossoverOperator == "Set 3":
+                # update this method, still old version
                 PopulationOffspring  = genetic_algorithm.initialize_population()
                 
             elif CrossoverOperator == "Set 4":
+                # update this method, still old version
                 PopulationOffspring  = genetic_algorithm.redistribution()
                 
             else:
@@ -471,6 +580,13 @@ class GeneticAlgorithm:
                 
                     PopulationOffspring.Chromosome[i] = Child1
                     PopulationOffspring.Chromosome[i+1] = Child2
+                    
+                    # Store information on newly created chromosomes in the PopulationComposition dictionary
+
+                    Children = [Child1, Child2]
+                    for Child in range(0,len(Children)):
+                        PopulationComposition['Gen '+str(Generation)] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [Parent1,Parent2])
+
                     break
             
 
@@ -482,8 +598,18 @@ class GeneticAlgorithm:
 
                     PopulationOffspring.Chromosome[i] = Parent1
                     PopulationOffspring.Chromosome[i+1] = Parent2
-                    break
                     
+                    # Store information on newly created chromosome in the PopulationComposition dictionary
+                    
+                    Children = [Parent1,Parent2]
+                    for Child in range(0,len(Children)):
+                        PopulationComposition['Gen '+str(Generation)] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [Parent1,Parent2] )
+
+                 
+                    break
+               
+                
+                
         return PopulationOffspring
         
     """

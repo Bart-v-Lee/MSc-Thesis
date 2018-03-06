@@ -61,6 +61,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
     PopulationComposition = genetic_algorithm.Population.CreatePopulationCompositionDictionary(BC.NumberOfGenerations[0])
         
     for Generation in range(0,int(BC.NumberOfGenerations[0])): 
+        
         print("Generation "+str(Generation)+" has started")
         """
         Step 2. Evaluate the fatigue fitness of the individuals in the population
@@ -77,9 +78,9 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 
                 # For comparison at the end of the optimisation, the fitness values for the initial population are also stored 
                 PopulationInitial.Fitness[IndividualNumber] = PopulationCurrent.Fitness[IndividualNumber]
-                
+
                 # Store information into the PopulationComposition dictionary
-                PopulationComposition = genetic_algorithm.Population.StorePopulationInformation(Generation, Operation = "Initialization", PopulationComposition)
+                PopulationComposition['Gen '+str(0)] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(0)], Operation = "Initialization", Chromosome = PopulationInitial.Chromosome[IndividualNumber] , Fitness = PopulationInitial.Fitness[IndividualNumber], Pp = None, Parents = 0)
                 
         else:                       #else use the Current population that has been produced through previous generations
         
@@ -91,7 +92,8 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 PopulationCurrent.Chromosome[IndividualNumber] = PopulationOffspring.Chromosome[IndividualNumber]
         
                 #Store information into the PopulationComposition dictionary
-                
+                PopulationComposition['Gen '+str(Generation)] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)], Operation = "Evaluation", Chromosome = PopulationCurrent.Chromosome[IndividualNumber] , Fitness = PopulationCurrent.Fitness[IndividualNumber], Pp = None, Parents = 0)
+  
                 
         """
         Step 2.a Checking the Termination Condition 
@@ -118,6 +120,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             """
             
             PopulationParents = genetic_algorithm.GeneticAlgorithm.CalculateReproductionProbParents(PopulationCurrentSelected, BC.RankingOperator[0])
+            
             
             """
             Step 5. Select (two) solutions from parent population for reproduction
