@@ -70,25 +70,134 @@ class Population:
         return PopulationInitial
         
         
-        def CalculateDiversity():
+    def CalculateDiversity():
+        """
+        Calculates the measure of diversity for a population based on the unique features present in the entire population
+        """
+        pass
+    
+    def CalculatePopulationStatistics():
+        """
+        Calculates the main statistics of the population based on its individuals. These main statistics are:
+            
+        Main population statistics:
+            1. Mean fitness
+            2. Standard deviation of fitness
+            3. Max fitness
+            4. Min fitness
+        """
+        pass
+   
+    
+    def CreatePopulationCompositionDictionary(NumberOfGenerations):
+        """
+        This method creates a dictionary to store the PopulationComposition information along the generations
+        """
+        
+        import database_connection
+        
+        PopulationDataframe =  database_connection.Database.RetrievePopulationDataframe(N_pop = 0)
+        
+        
+        # Create the dictionary
+        PopulationComposition = {}
+        
+        for Generation in range(0,NumberOfGenerations):
+            PopulationComposition['Gen '+str(Generation)] = PopulationDataframe
+                                  
+        return PopulationComposition
+        
+        
+    def TransferPopulation(Generation, PopulationComposition):
+        """
+        This method transfer the unique ID's from the chromosomes in one Generation to the next.
+        It is used to maintain a historic overview of when each unique solution was found.
+        """
+        
+        
+        
+        
+        return PopulationComposition
+
+            
+    def StorePopulationInformation(Generation, PopulationComposition,  Operation, Parents, Pp, Fitness, Chromosome):
+        """
+        This method stores new information in the PopulationComposition dictionary depending on the operation that has been performed.
+        The PopulationComposition dictionary contains all information of each generation for each run.
+        For each generation it stores information in a PopulationDataFrame, after which it is appended to a dictionary which can be accessed for each generation number.
+        """
+        
+        # Extract PopulationDataframe based on the current Generation
+        
+        PopulationDataframe = PopulationComposition['Gen '+str(Generation)]
+        
+        # Determine the new data based on the operation
+        
+        if Operation == "Initialization":
             """
-            Calculates the measure of diversity for a population based on the unique features present in the entire population
+            New data points : chromosome 
             """
+            
+            # Check whether the chromosome historically exists in the PopulationDataframe
+            
+            for ChromosomeNumber in range(1,len(PopulationDataframe)):
+                
+                if PopulationDataframe.Chromosome[ChromosomeNumber] == Chromosome:
+                    # If it exists, add a new relation
+                    
+                    PopulationDataframe.Relations[ChromosomeNumber].append(list(0,"Initialization"))
+                    
+                    
+                    
+                else:
+                    # Add new chromosome to the PopulationDataframe and provide it with unique ID
+                    
+                    PopulationDataframe.Chromosome.append(Chromosome)
+
+                    
             pass
         
-        def CalculatePopulationStatistics():
+        elif Operation == "Evaluation":
             """
-            Calculates the main statistics of the population based on its individuals. These main statistics are:
-                
-            Main population statistics:
-                1. Mean fitness
-                2. Standard deviation of fitness
-                3. Max fitness
-                4. Min fitness
+            New data points : fitness
             """
-            pass
-       
+        
+        elif Operation == "Selection":
+            """
+            New data points : Pp, Pp_cum
+            """
+        
+        elif Operation == "Crossover":
+            """
+            New data points : chromosome, parents
+            """
+        
+        elif Operation == "Mutation":
+            """
+            New data points : chromosome, parents
+            """
+            
+        elif Operation == "Elitism":
+            """
+            New data points : chromosome, parents
+            """
+        
+        
+        # Store information in the DataFrame
+        
+        
+        
+        # Append the information to the PopulationComposition dictionary
+        
+        
 
+    
+
+    
+        
+        return PopulationComposition
+        
+        
 
 class GeneticAlgorithm:
     """
