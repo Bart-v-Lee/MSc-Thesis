@@ -53,10 +53,14 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
     print("Step 1. Initializing initial population...")
     
     import genetic_algorithm
-    Population = genetic_algorithm.Population(BC.N_pop[0]) #object initiated with its instance variables
+        
+#    Population = genetic_algorithm.Population(BC.N_pop[0]) #object initiated with its instance variables
     PopulationInitial = genetic_algorithm.Population.InitializePopulation(BC.n_total[0], BC.Delta_a[0], BC.W[0], BC.N_pop[0], BC.T_dict[0], BC.SeedSettings[0], BC.SeedNumber[0], CONSTRAINTS) 
     
-    for Generation in range(0,int(BC.NumberOfGenerations)): 
+    # Initialize the PopulationComposition dictionary
+    PopulationComposition = genetic_algorithm.Population.CreatePopulationCompositionDictionary(BC.NumberOfGenerations[0])
+        
+    for Generation in range(0,int(BC.NumberOfGenerations[0])): 
         print("Generation "+str(Generation)+" has started")
         """
         Step 2. Evaluate the fatigue fitness of the individuals in the population
@@ -74,6 +78,9 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 # For comparison at the end of the optimisation, the fitness values for the initial population are also stored 
                 PopulationInitial.Fitness[IndividualNumber] = PopulationCurrent.Fitness[IndividualNumber]
                 
+                # Store information into the PopulationComposition dictionary
+                PopulationComposition = genetic_algorithm.Population.StorePopulationInformation(Generation, Operation = "Initialization", PopulationComposition)
+                
         else:                       #else use the Current population that has been produced through previous generations
         
             PopulationCurrent = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
@@ -83,6 +90,8 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationOffspring.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
                 PopulationCurrent.Chromosome[IndividualNumber] = PopulationOffspring.Chromosome[IndividualNumber]
         
+                #Store information into the PopulationComposition dictionary
+                
                 
         """
         Step 2.a Checking the Termination Condition 

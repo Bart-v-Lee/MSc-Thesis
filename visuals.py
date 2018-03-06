@@ -93,11 +93,23 @@ class PopulationVisuals:
         pass
     
     
-    def ShowPopulationConvergence():
 
         
         
-        pass
+        
+    
+    def ShowPopulationConvergence():
+        """
+        This method visualizes the stored information of the dictionary population composition along the generations
+        """
+        
+        
+        
+        
+        
+        
+        
+        
     
     
     
