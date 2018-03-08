@@ -442,8 +442,8 @@ class GeneticAlgorithm:
             
         for IndividualNumber in range(1,len(SelectionProbParents)):
             
-            global Generation
-            global PopulationComposition
+#            global Generation
+#            global PopulationComposition
             
             PopulationComposition['Gen '+str(Generation)] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)], Operation = "Selection", Chromosome = SelectionProbParents.Chromosome[IndividualNumber] , Fitness = 0, Pp = SelectionProbParents.Pp[IndividualNumber], Parents = 0)
 
