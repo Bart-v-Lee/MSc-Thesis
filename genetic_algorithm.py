@@ -70,11 +70,55 @@ class Population:
         return PopulationInitial
         
         
-    def CalculateDiversity():
+    def StoreGeneComposition(PopulationDataframe, t_dict, n_total):
         """
-        Calculates the measure of diversity for a population based on the unique features present in the entire population
+        This method creates an array of all possible gene values and counts the frequency with which the gene value is present in the population at a certain generation.
+        This information is stored in a dictionary.
         """
-        pass
+        GeneArray = np.zeros((len(t_dict),n_total))
+        ThicknessArray = np.sort(list(t_dict.values()), axis=None)
+        
+        # Create dictionary to lookup the thickness step based on a thickness value in mm
+        
+        InverseThicknessDict = {}
+        
+        for Thickness in range(0,len(ThicknessArray)):
+            
+            InverseThicknessDict[ThicknessArray[Thickness]] = Thickness
+        
+        # For every Gene, calculate the frequency in the population and add it to the GeneArray
+            
+        Genotypes = PopulationDataframe.Genotype
+
+        for Genotype in range(0,len(Genotypes)):
+        
+            ParentRelations = PopulationDataframe.Relations[Genotype]
+            GeneFrequency = 0
+            
+            for Operation in ParentRelations:
+        
+                OperationFrequency = len(ParentRelations[Operation])
+                GeneFrequency += OperationFrequency
+                
+            # Add the current Gene to the GeneArray with the frequency 'GeneFrequency'
+        
+            
+            for Gene in range(0,len(Genotypes[Genotype])):
+                
+                GeneValue = str(Genotypes[Genotype][Gene])
+                GeneArrayPosition = InverseThicknessDict[GeneValue]
+                
+                for Position in range(0,GeneArrayPosition+1):
+                    GeneArray[Position,Gene] += GeneFrequency
+                  
+        
+        GeneArray = np.flipud(GeneArray)
+        
+        
+        return GeneArray
+        
+        
+        
     
     def CalculatePopulationStatistics():
         """
@@ -98,14 +142,36 @@ class Population:
         
         PopulationDataframe =  database_connection.Database.RetrievePopulationDataframe(N_pop = 0)
         
-        
+        PopulationGeneComposition = []
         # Create the dictionary
         PopulationComposition = {}
         
         for Generation in range(0,NumberOfGenerations):
-            PopulationComposition['Gen '+str(Generation)] = PopulationDataframe
+            PopulationComposition['Gen '+str(Generation)] = [PopulationDataframe, PopulationGeneComposition]
                                   
         return PopulationComposition
+        
+        
+            
+    def ExtractGenotype(Chromosome,delta_a, n_total, W):
+        """
+        This method extracts the genotype of a solution from the chromosome
+        """
+        
+        
+        delta_x = W / n_total
+        
+        ContainerEdge = np.linspace(delta_x,150,n_total)
+
+        Genotype = []
+        for Thickness in ContainerEdge:
+            Genotype.append(Chromosome.Thickness[int(Thickness)-1])
+
+        
+        
+        return Genotype
+
+        
         
         
     def TransferPopulation(Generation, PopulationComposition):
@@ -126,7 +192,7 @@ class Population:
         The PopulationComposition dictionary contains all information on each individual of each generation during a single run of the algorithm.
         For each generation it stores information in a PopulationDataFrame, after which it is appended to the PopulationComposition dictionary for analysis.
         """
-        
+                
         # Determine the new data based on the operation
         
         if Operation == "Initialization":

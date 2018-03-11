@@ -84,6 +84,24 @@ class FatigueVisuals:
     
 class PopulationVisuals:
     
+
+    
+    def ShowPopulationComposition(t_dict, ):
+
+        
+        
+        
+        
+        
+        
+        
+        pass
+        
+        
+        
+        
+        
+        
     
     def ShowInitialPopulationDiversity(PopulationInitial):
         """
@@ -112,7 +130,7 @@ class PopulationVisuals:
         
     
     
-    
+        pass
 
     
     
