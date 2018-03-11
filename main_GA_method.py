@@ -80,7 +80,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 PopulationInitial.Fitness[IndividualNumber] = PopulationCurrent.Fitness[IndividualNumber]
 
                 # Store information into the PopulationComposition dictionary
-                PopulationComposition['Gen '+str(0)] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(0)], Operation = "Initialization", Chromosome = PopulationInitial.Chromosome[IndividualNumber] , Fitness = PopulationInitial.Fitness[IndividualNumber], Pp = None, Parents = 0)
+                PopulationComposition['Gen '+str(0)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(0)][0], Operation = "Initialization", Chromosome = PopulationInitial.Chromosome[IndividualNumber] , Fitness = PopulationInitial.Fitness[IndividualNumber], Pp = None, Parents = 0)
                 
         else:                       #else use the Current population that has been produced through previous generations
         
@@ -92,7 +92,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 PopulationCurrent.Chromosome[IndividualNumber] = PopulationOffspring.Chromosome[IndividualNumber]
         
                 #Store information into the PopulationComposition dictionary
-                PopulationComposition['Gen '+str(Generation)] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)], Operation = "Evaluation", Chromosome = PopulationCurrent.Chromosome[IndividualNumber] , Fitness = PopulationCurrent.Fitness[IndividualNumber], Pp = None, Parents = 0)
+                PopulationComposition['Gen '+str(Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)][0], Operation = "Evaluation", Chromosome = PopulationCurrent.Chromosome[IndividualNumber] , Fitness = PopulationCurrent.Fitness[IndividualNumber], Pp = None, Parents = 0)
   
                 
         """
@@ -152,11 +152,25 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 PopulationOffspring.Chromosome[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.MutatePopulation(PopulationOffspring.Chromosome[IndividualNumber], BC.MutationOperator[0], BC.Pm[0], BC.n_total[0], BC.W[0],  BC.T_dict[0], CONSTRAINTS)
         
 
+        """
+        Extract the genotypes of all new chromosomes and add them to the PopulationComposition dictionary for analysis. 
+        Calculate PopulationGeneComposition array for analysis.
+        """
+        
+        for UniqueChromosome in PopulationComposition['Gen '+str(Generation)][0].index:
+            
+            PopulationComposition['Gen '+str(Generation)][0].Genotype[UniqueChromosome] = genetic_algorithm.Population.ExtractGenotype(PopulationComposition['Gen '+str(Generation)][0].Chromosome[UniqueChromosome],BC.Delta_a[0], BC.n_total[0], BC.W[0])
+                
+        # Calculate PopulationGeneComposition    
+            
+        PopulationComposition['Gen '+str(Generation)][1] = genetic_algorithm.Population.StoreGeneComposition(PopulationComposition['Gen '+str(Generation)][0], BC.T_dict[0], BC.n_total[0])
+                
     """
     #==============================================================================
     #                              Genetic Algorithm END
     #==============================================================================
     """    
+    
     
 """
 #==============================================================================

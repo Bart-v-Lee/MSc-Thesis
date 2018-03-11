@@ -19,13 +19,7 @@ from brute_force_method import brute_force_method
 class CrenellationPattern:
     """
     A single solution, or in GA terms "an individual", which can have several attributes specific to the combinatorial optimization problem of crenellation design.
-    
-    Attributes:
-        1.
-        2.
-        3.
-        4.
-        5.
+
     
     """
     
@@ -83,7 +77,6 @@ class CrenellationPattern:
     
                 ThicknessLeft[(i-1)*Delta_x:(i)*Delta_x] = t_dict[str(ThicknessLevelsChosen[i-1])]
                           
-
                 
             Thickness = np.append(ThicknessLeft, np.flipud(ThicknessLeft))
                 
@@ -111,7 +104,6 @@ class CrenellationPattern:
     
                 Thickness[(i-1)*Delta_x:(i)*Delta_x] = t_dict[str(ThicknessLevelsChosen[i-1])]
             
-                
             Chromosome.Thickness = Thickness 
             Chromosome.Width = Width
             
