@@ -74,12 +74,13 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             
             for IndividualNumber in range(1,int(BC.N_pop)+1):
                 PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationInitial.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
+                
                 PopulationCurrent.Chromosome[IndividualNumber] = PopulationInitial.Chromosome[IndividualNumber]
                 
                 # For comparison at the end of the optimisation, the fitness values for the initial population are also stored 
                 PopulationInitial.Fitness[IndividualNumber] = PopulationCurrent.Fitness[IndividualNumber]
 
-                # Store information into the PopulationComposition dictionary
+                # Store information into the PopulationComposition dictionary for current individual
                 PopulationComposition['Gen '+str(0)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(0)][0], Operation = "Initialization", Chromosome = PopulationInitial.Chromosome[IndividualNumber] , Fitness = PopulationInitial.Fitness[IndividualNumber], Pp = None, Parents = 0)
                 
         else:                       #else use the Current population that has been produced through previous generations
@@ -89,6 +90,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             for IndividualNumber in range(1,int(BC.N_pop)+1):
                 
                 PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationOffspring.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
+                
                 PopulationCurrent.Chromosome[IndividualNumber] = PopulationOffspring.Chromosome[IndividualNumber]
         
                 #Store information into the PopulationComposition dictionary
@@ -107,6 +109,13 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
         
         else: 
             # Store information on the current population for the family tree
+            
+            """
+            Transfer list of unique chromosomes to the next generation
+            """
+            
+            PopulationComposition = genetic_algorithm.Population.TransferPopulation(Generation, PopulationComposition)
+            
             pass
         """
         Step 3. Select the fittest solutions
@@ -121,6 +130,12 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             
             PopulationParents = genetic_algorithm.GeneticAlgorithm.CalculateReproductionProbParents(PopulationCurrentSelected, BC.RankingOperator[0])
             
+            # Store population data Pp
+            
+            for IndividualNumber in range(1,len(PopulationParents)):
+            
+                PopulationComposition['Gen '+str(Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)][0], Operation = "Selection", Chromosome = PopulationParents.loc[IndividualNumber,"Chromosome"] , Fitness = 0, Pp = PopulationParents.loc[IndividualNumber, "Pp"], Parents = 0)
+
             
             """
             Step 5. Select (two) solutions from parent population for reproduction
@@ -136,10 +151,21 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 Step 6. Crossover of the selected parent solutions
                 """
                 
-                PopulationOffspring = genetic_algorithm.GeneticAlgorithm.RecombineParents(PopulationParents.Chromosome[ParentSelected1], PopulationParents.Chromosome[ParentSelected2], PopulationOffspring, BC.Pc[0], BC.W[0], BC.CrossoverOperator[0], CONSTRAINTS, BC.n_total[0])
+                PopulationOffspring, Child1, Child2 = genetic_algorithm.GeneticAlgorithm.RecombineParents(PopulationParents.Chromosome[ParentSelected1], PopulationParents.Chromosome[ParentSelected2], PopulationOffspring, BC.Pc[0], BC.W[0], BC.CrossoverOperator[0], CONSTRAINTS, BC.n_total[0])
             
+                Children = [Child1, Child2]
+                for Child in range(0,len(Children)):
+                    PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]])
+
+        
+                
         else:
             PopulationOffspring = PopulationCurrentSelected # if crossover has been disabled, the surviving population becomes the offspring population
+                
+            for IndividualNumber in range(1,len(PopulationOffspring)):
+                
+                PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]])
+
             
         """
         Step 7. Mutation of Offspring population
@@ -157,14 +183,19 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
         Calculate PopulationGeneComposition array for analysis.
         """
         
-        for UniqueChromosome in PopulationComposition['Gen '+str(Generation)][0].index:
+        for UniqueChromosome in range(0,len(PopulationComposition['Gen '+str(Generation)][0])):
+            print("Genotypes have been extracted...")
+            print("Generation number ",Generation)
+            print(UniqueChromosome, "unique chromosome")
+            print(PopulationComposition['Gen '+str(Generation)][0])
+            print(PopulationComposition['Gen '+str(Generation)][0].loc[UniqueChromosome,"Chromosome"])
             
-            PopulationComposition['Gen '+str(Generation)][0].Genotype[UniqueChromosome] = genetic_algorithm.Population.ExtractGenotype(PopulationComposition['Gen '+str(Generation)][0].Chromosome[UniqueChromosome],BC.Delta_a[0], BC.n_total[0], BC.W[0])
+            PopulationComposition['Gen '+str(Generation)][0].loc[UniqueChromosome,"Genotype"] = genetic_algorithm.Population.ExtractGenotype(PopulationComposition['Gen '+str(Generation)][0].loc[UniqueChromosome,"Chromosome"] , BC.Delta_a[0], BC.n_total[0], BC.W[0])
                 
-        # Calculate PopulationGeneComposition    
-            
+        # Calculate and Store GeneComposition for the current generation  
+        
         PopulationComposition['Gen '+str(Generation)][1] = genetic_algorithm.Population.StoreGeneComposition(PopulationComposition['Gen '+str(Generation)][0], BC.T_dict[0], BC.n_total[0])
-                
+        
     """
     #==============================================================================
     #                              Genetic Algorithm END
