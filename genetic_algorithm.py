@@ -97,22 +97,24 @@ class Population:
             ParentRelations = PopulationDataframe.Relations[Genotype]
             GeneFrequency = 0
             
-            for Operation in ParentRelations:
-        
-                OperationFrequency = len(ParentRelations[Operation])
-                GeneFrequency += OperationFrequency
-                
-            # Add the current Gene to the GeneArray with the frequency 'GeneFrequency'
-        
+            try:
+                for Operation in ParentRelations:
             
-            for Gene in range(0,len(Genotypes[Genotype])):
+                    OperationFrequency = len(ParentRelations[Operation])
+                    GeneFrequency += OperationFrequency
+                    
+                # Add the current Gene to the GeneArray with the frequency 'GeneFrequency'
+            
                 
-                GeneValue = str(Genotypes[Genotype][Gene])
-                GeneArrayPosition = InverseThicknessDict[GeneValue]
-                
-                for Position in range(0,GeneArrayPosition+1):
-                    GeneArray[Position,Gene] += GeneFrequency
-                  
+                for Gene in range(0,len(Genotypes[Genotype])):
+                    
+                    GeneValue = str(Genotypes[Genotype][Gene])
+                    GeneArrayPosition = InverseThicknessDict[GeneValue]
+                    
+                    for Position in range(0,GeneArrayPosition+1):
+                        GeneArray[Position,Gene] += GeneFrequency
+            except:
+                continue
         
         GeneArray = np.flipud(GeneArray)
         
@@ -150,7 +152,6 @@ class Population:
             PopulationDataframe =  database_connection.Database.RetrievePopulationDataframe(N_pop = 0)
 
             PopulationComposition['Gen '+str(Generation)] = [PopulationDataframe, PopulationGeneComposition]
-                              
                                   
         return PopulationComposition
         
@@ -169,6 +170,8 @@ class Population:
         for Thickness in ContainerEdge:
             Genotype.append(Chromosome.Thickness[int(Thickness)-1])
         
+        Genotype = np.array(Genotype)
+            
         return Genotype
 
         
@@ -179,11 +182,13 @@ class Population:
         This method transfer the unique ID's from the chromosomes in one Generation to the next, including the fitness, as this is dependent on the chromosomes.
         It is used to maintain a historic overview of when each unique solution was found.
         """
-        
-        PopulationComposition["Gen "+str(Generation+1)][0]["Chromosome"] = PopulationComposition["Gen "+str(Generation)][0]["Chromosome"]
-        PopulationComposition["Gen "+str(Generation+1)][0]["Genotype"] = PopulationComposition["Gen "+str(Generation)][0]["Genotype"]
-        PopulationComposition["Gen "+str(Generation+1)][0]["Fitness"] = PopulationComposition["Gen "+str(Generation)][0]["Fitness"]
-                              
+        try:
+            PopulationComposition["Gen "+str(Generation+1)][0]["Chromosome"] = PopulationComposition["Gen "+str(Generation)][0]["Chromosome"]
+    #        PopulationComposition["Gen "+str(Generation+1)][0]["Genotype"] = PopulationComposition["Gen "+str(Generation)][0]["Genotype"]
+            PopulationComposition["Gen "+str(Generation+1)][0]["Fitness"] = PopulationComposition["Gen "+str(Generation)][0]["Fitness"]
+        except:
+            pass
+                                  
         return PopulationComposition
 
             
@@ -350,9 +355,59 @@ class Population:
             New data points : chromosome, parents
             """
             
+            # lookup the parent ID in the PopulationDataframe
+            Parent_ID = None
+            
+            ParentThickness = Parents[0].Thickness
+            
+            for ChromosomeNumber in range(0,len(PopulationDataframe)):
+                
+                if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,ParentThickness):
+                    
+                    Parent_ID = ChromosomeNumber
             
             
+            # lookup chromosome in PopulationDataframe
             
+            for ChromosomeNumber in range(0,len(PopulationDataframe)):
+                
+                if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
+
+                    ChromosomeNumber = ChromosomeNumber
+                    Exists = True
+                    break
+                
+                else:
+                    Exists = False
+                    continue
+            
+            if Exists == True:
+                """
+                Only add the relations
+                """
+                try:
+                    PopulationDataframe.loc[ChromosomeNumber,"Relations"]["Mutation"].append([Parent_ID])                
+                except:
+                    
+                    PopulationDataframe.loc[ChromosomeNumber, "Relations"] = {"Mutation": [Parent_ID]}
+            else:
+                """
+                Add the chromosome and relations
+                """
+
+#
+#                NewChromosome = pd.DataFrame(data = {'Chromosome' : [Chromosome]} )
+#                
+#                PopulationDataframe = PopulationDataframe.Chromosome.append(NewChromosome, ignore_index=False)
+#
+#                PopulationDataframe.Relations[PopulationDataframe.index[-1]]['Crossover'] = [Parent1_ID,Parent2_ID]  
+#                
+            
+                
+                NewChromosome = pd.DataFrame(data = Chromosome)
+                NewChromosomeDict = {'Chromosome':NewChromosome} 
+                PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
+                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Mutation":[Parent_ID] }
             
             
             
@@ -674,6 +729,7 @@ class GeneticAlgorithm:
                     
                     # Store information on newly created chromosome in the PopulationComposition dictionary
                     import main_GA_method as main
+                    import genetic_algorithm
                     
                     Child1 = Parent1
                     Child2 = Parent2
@@ -1075,11 +1131,16 @@ class GeneticAlgorithm:
     #==============================================================================
     """
         
-    def CheckTermination(PopulationCurrent, Generation):
+    def CheckTermination(NumberOfGenerations, Generation, PopulationCurrent):
         
         # add in unique termination conditions based on fitness values
         
-        TerminationCondition = False
+        if Generation == NumberOfGenerations-1:
+            
+            TerminationCondition = True
+            
+        else:
+            TerminationCondition = False
         
         
         return TerminationCondition
