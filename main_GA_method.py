@@ -26,7 +26,7 @@ time_start = time.clock()
 #                       Choose which Experiment to Run
 #==============================================================================
 """
-
+#check the hard-coded EXPERIMENT ID in StorePopulationComposition method!
 ExperimentNumberID = 1
 
 """
@@ -110,14 +110,34 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
         if TerminationCondition == True:
             
             PopulationComposition['Gen '+str(Generation)][1] = genetic_algorithm.Population.StoreGeneComposition(PopulationComposition['Gen '+str(Generation)][0], BC.T_dict[0], BC.n_total[0])
+            
+            """
+            Extract the genotypes of all final chromosomes and add them to the PopulationComposition dictionary for analysis. 
+            Calculate PopulationGeneComposition array for analysis.
+            """
+            
+            for UniqueChromosome in range(0,len(PopulationComposition['Gen '+str(Generation)][0])):
+#                print("Genotypes have been extracted...")
+#                print("Generation number ",Generation)
+#                print(UniqueChromosome, "unique chromosome")
+#                print(PopulationComposition['Gen '+str(Generation)][0])
+#                print(PopulationComposition['Gen '+str(Generation)][0].loc[UniqueChromosome,"Chromosome"])
+                
+                PopulationComposition['Gen '+str(Generation)][0].Genotype[UniqueChromosome] = genetic_algorithm.Population.ExtractGenotype(PopulationComposition['Gen '+str(Generation)][0].loc[UniqueChromosome,"Chromosome"] , BC.Delta_a[0], BC.n_total[0], BC.W[0])
+                    
+            # Calculate and Store GeneComposition for the current generation  
+            
+            PopulationComposition['Gen '+str(Generation)][1] = genetic_algorithm.Population.StoreGeneComposition(PopulationComposition['Gen '+str(Generation)][0], BC.T_dict[0], BC.n_total[0])
+          
 
             PopulationFinal = PopulationCurrent
+
         
         else: 
             # Store information on the current population for the family tree
             
             """
-            Transfer list of unique chromosomes to the next generation
+            Transfer memory of unique chromosomes, fitness and genotypes to the next generation
             """
             
             PopulationComposition = genetic_algorithm.Population.TransferPopulation(Generation, PopulationComposition)
@@ -138,9 +158,9 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 
                 # Store population data Pp
                 
-                for IndividualNumber in range(1,len(PopulationParents)):
+                for IndividualNumber in range(1,len(PopulationParents)+1):
                 
-                    PopulationComposition['Gen '+str(Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)][0], Operation = "Selection", Chromosome = PopulationParents.loc[IndividualNumber,"Chromosome"] , Fitness = 0, Pp = PopulationParents.loc[IndividualNumber, "Pp"], Parents = 0)
+                    PopulationComposition['Gen '+str(Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)][0], Operation = "Selection", Chromosome = PopulationParents.loc[IndividualNumber,"Chromosome"] , Fitness = None, Pp = PopulationParents.loc[IndividualNumber, "Pp"], Parents = None)
     
                 
                 """
@@ -163,8 +183,10 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                     for Child in range(0,len(Children)):
                         PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]])
     
-            
-                    
+
+                            
+            # if Crossover is not enabled, the surviving population becomes the offspring population. !The size still needs to increase with twice the size!
+                            
             else:
                 PopulationOffspring = PopulationCurrentSelected # if crossover has been disabled, the surviving population becomes the offspring population
                     
@@ -195,11 +217,11 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             """
             
             for UniqueChromosome in range(0,len(PopulationComposition['Gen '+str(Generation)][0])):
-                print("Genotypes have been extracted...")
-                print("Generation number ",Generation)
-                print(UniqueChromosome, "unique chromosome")
-                print(PopulationComposition['Gen '+str(Generation)][0])
-                print(PopulationComposition['Gen '+str(Generation)][0].loc[UniqueChromosome,"Chromosome"])
+#                print("Genotypes have been extracted...")
+#                print("Generation number ",Generation)
+#                print(UniqueChromosome, "unique chromosome")
+#                print(PopulationComposition['Gen '+str(Generation)][0])
+#                print(PopulationComposition['Gen '+str(Generation)][0].loc[UniqueChromosome,"Chromosome"])
                 
                 PopulationComposition['Gen '+str(Generation)][0].Genotype[UniqueChromosome] = genetic_algorithm.Population.ExtractGenotype(PopulationComposition['Gen '+str(Generation)][0].loc[UniqueChromosome,"Chromosome"] , BC.Delta_a[0], BC.n_total[0], BC.W[0])
                     
