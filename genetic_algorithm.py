@@ -11,6 +11,7 @@ import numpy as np
 import crenellation
 import sys
 import copy
+import math
 
 class Population:
     """A set of solutions, in GA terms a " Population of individuals". A population has the following attributes:
@@ -258,7 +259,7 @@ class Population:
                 
                 if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
                     
-                    PopulationDataframe.Fitness[ChromosomeNumber] = Fitness
+                    PopulationDataframe.loc[ChromosomeNumber,"Fitness"] = Fitness
                     
                 else:
                     continue
@@ -275,10 +276,13 @@ class Population:
             for ChromosomeNumber in range(0,len(PopulationDataframe)):
                 
                 if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
-            
-                    print(Pp)
-                    PopulationDataframe.loc[ChromosomeNumber, "Pp"] = PopulationDataframe.loc[ChromosomeNumber, "Pp"] + Pp
-                    
+                    #PopulationDataframe.loc[ChromosomeNumber, "Pp"] += Pp
+                    #PopulationDataframe.Pp[ChromosomeNumber] += Pp
+                    if math.isnan(PopulationDataframe.at[ChromosomeNumber,"Pp"]):
+                        
+                        PopulationDataframe.at[ChromosomeNumber,"Pp"] = Pp
+                    else:
+                        PopulationDataframe.at[ChromosomeNumber,"Pp"] += Pp
 
             
         elif Operation == "Crossover":
@@ -325,13 +329,13 @@ class Population:
                 Only add the relations
                 """
                 try:
-                    PopulationDataframe.loc[ChromosomeNumber,"Relations"]["Crossover"].append([Parent1_ID,Parent2_ID])                
+                    PopulationDataframe.loc[ChromosomeNumber,"Relations"]["Crossover"].append(np.array([Parent1_ID,Parent2_ID]))                
                 except:
                     
-                    PopulationDataframe.loc[ChromosomeNumber, "Relations"] = {"Crossover": [Parent1_ID,Parent2_ID]}
+                    PopulationDataframe.loc[ChromosomeNumber, "Relations"] = {"Crossover": np.array([Parent1_ID,Parent2_ID])}
             else:
                 """
-                Add the chromosome and relations
+                Add the chromosome, relations and evaluate its fitness intermediately, since it might disappear again in the mutation operation.
                 """
 
 #
@@ -346,8 +350,36 @@ class Population:
                 NewChromosome = pd.DataFrame(data = Chromosome)
                 NewChromosomeDict = {'Chromosome':NewChromosome} 
                 PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
-                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Crossover":[Parent1_ID,Parent2_ID] }
+                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Crossover":np.array([Parent1_ID,Parent2_ID]) }
                 
+                #the child solution has not been found before, evaluate its fitness such that it is stored in the PopulationComposition dataframe before the child is potentially mutated and the solution is lost
+
+                import genetic_algorithm 
+                import database_connection
+                BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID=1)
+                MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
+                
+                PopulationDataframe.loc[PopulationDataframe.index[-1],"Fitness"] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],Chromosome, BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
+
+                
+#                Exists = False
+#                
+#                #iterates through each chromosome in the PopulationComposition Dictionary to check whether the child chromosome was previously found.
+#                for ChromosomeNumber in range(0,len(PopulationComposition['Gen '+str(Generation)][0])):
+#        
+#                    if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Children[Child].Thickness):
+#                        
+#                        Exists = True
+#                        
+#                    else:
+#                        continue
+#                # if the child solution didnt exist, we want to evaluate its fitness, such that we can know whether the potential mutation thereafter improved or decreased the fitness of this solution.
+#                if Exists == False:
+#                    PopulationDataframeNextGeneration = PopulationComposition['Gen '+str(Generation+1)][0]
+#                    PopulationDataframeNextGeneration.loc[PopulationDataframeNextGeneration.index[-1],"Fitness"] = 
+#                else:
+#                    pass
+#            
                 
                 
         elif Operation == "Mutation":
@@ -381,36 +413,42 @@ class Population:
                     Exists = False
                     continue
             
-            if Exists == True:
-                """
-                Only add the relations
-                """
-                try:
-                    PopulationDataframe.loc[ChromosomeNumber,"Relations"]["Mutation"].append([Parent_ID])                
-                except:
-                    
-                    PopulationDataframe.loc[ChromosomeNumber, "Relations"] = {"Mutation": [Parent_ID]}
-            else:
-                """
-                Add the chromosome and relations
-                """
-
-#
-#                NewChromosome = pd.DataFrame(data = {'Chromosome' : [Chromosome]} )
-#                
-#                PopulationDataframe = PopulationDataframe.Chromosome.append(NewChromosome, ignore_index=False)
-#
-#                PopulationDataframe.Relations[PopulationDataframe.index[-1]]['Crossover'] = [Parent1_ID,Parent2_ID]  
-#                
-            
+            #check if the parent ID is the same as the child ID. If true, then mutation didnt take place.
+            if Parent_ID != ChromosomeNumber:
                 
-                NewChromosome = pd.DataFrame(data = Chromosome)
-                NewChromosomeDict = {'Chromosome':NewChromosome} 
-                PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
-                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Mutation":[Parent_ID] }
-            
-            
-            
+                if Exists == True:
+                    """
+                    Only add the relations
+                    """
+                    try:
+                        PopulationDataframe.loc[ChromosomeNumber,"Relations"]["Mutation"].append([Parent_ID])                
+                    except:
+                        try:
+                            PopulationDataframe.loc[ChromosomeNumber, "Relations"].update({"Mutation": [Parent_ID]})
+                        except:
+                            PopulationDataframe.loc[ChromosomeNumber, "Relations"] = {"Mutation": [Parent_ID]}
+                            
+                else:
+                    """
+                    Add the chromosome and relations
+                    """
+    
+    #
+    #                NewChromosome = pd.DataFrame(data = {'Chromosome' : [Chromosome]} )
+    #                
+    #                PopulationDataframe = PopulationDataframe.Chromosome.append(NewChromosome, ignore_index=False)
+    #
+    #                PopulationDataframe.Relations[PopulationDataframe.index[-1]]['Crossover'] = [Parent1_ID,Parent2_ID]  
+    #                
+                
+                    
+                    NewChromosome = pd.DataFrame(data = Chromosome)
+                    NewChromosomeDict = {'Chromosome':NewChromosome} 
+                    PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
+                    PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Mutation":[Parent_ID] }
+                
+            else:
+                pass
             
         elif Operation == "Elitism":
             """
@@ -541,7 +579,8 @@ class GeneticAlgorithm:
         # Step 2. Select the top individuals based on the given selection rate Rs
         
         NumberOfSurvivors = int(len(PopulationCurrentRanked) * Rs)
-        PopulationCurrentSelected = PopulationCurrentRanked[:NumberOfSurvivors]
+        PopulationCurrentSelected = PopulationCurrentRanked[:NumberOfSurvivors].reset_index()
+        PopulationCurrentSelected.index = PopulationCurrentSelected.index +1
         
         return PopulationCurrentSelected
         
@@ -571,9 +610,6 @@ class GeneticAlgorithm:
         elif RankingMethod == 'Tournament': #not developed yet at this point
             SelectionProbParents = genetic_algorithm.GeneticAlgorithm.Tournament()
             
-        # insert the Pp for each chromosome in the PopulationComposition dictionary
-            
-
             
         return SelectionProbParents
 
@@ -581,6 +617,17 @@ class GeneticAlgorithm:
     def RelativeFitness(PopulationCurrentSelected): 
         """
         Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness value amongst other solutions in the population.
+        """
+
+            
+        PopulationCurrentSelected["Pp"] = (PopulationCurrentSelected.Fitness) / (sum(PopulationCurrentSelected.Fitness))
+        PopulationCurrentSelected["Pp Cumulative"] = PopulationCurrentSelected["Pp"].cumsum()
+
+        return PopulationCurrentSelected
+        
+    def RelativeRank(PopulationCurrentSelected): #previously fitness_ranking_method
+        """
+        Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness rank amongst other solutions in the population.
         """
         N_pop_selected = len(PopulationCurrentSelected)
             
@@ -590,11 +637,6 @@ class GeneticAlgorithm:
         PopulationCurrentSelected["Pp Cumulative"] = PopulationCurrentSelected["Pp"].cumsum()
 
         return PopulationCurrentSelected
-        
-    def RelativeRank(PopulationCurrentSelected): #previously fitness_ranking_method
-        """
-        Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness rank amongst other solutions in the population.
-        """
         
 #        selection_rate = bc.ix["Selection Rate"]
 #        pop_size = int(bc.ix["Population size"])
