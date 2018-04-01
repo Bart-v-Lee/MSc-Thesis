@@ -51,8 +51,18 @@ class FatigueVisuals:
         pass
         
     def ShowTop3CrenellationPatterns(PopulationFinal, PopulationInitial):
+        """
+        This method visually plots the top 3 crenellation patterns in the initial and the final population
+        """
+        
         
         PopulationInitialRanked = PopulationInitial.sort_values("Fitness", ascending=False, kind = 'mergesort')
+        
+        ExperimentNumberID = 1
+
+        import database_connection
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+        MaxThickness = float(BC.T_dict[0][str(len(BC.T_dict)+1)])
         
         fig, axes = pp.subplots(nrows=2, ncols=3, figsize=(15,6))
         
@@ -64,11 +74,13 @@ class FatigueVisuals:
                     
             axes[1,i].plot(PopulationFinal.Chromosome[IndividualNumber].Thickness)
             axes[1,i].fill_between(PopulationFinal.Chromosome[IndividualNumber].Width, 0, PopulationFinal.Chromosome[IndividualNumber].Thickness, facecolor='green')
+            axes[1,i].set_ylim([0,MaxThickness])
             
             # Initial Population Figures
             
             axes[0,i].plot(PopulationInitial.Chromosome[IndividualNumber].Thickness)
             axes[0,i].fill_between(PopulationInitialRanked.Chromosome[IndividualNumber].Width, 0, PopulationInitialRanked.Chromosome[IndividualNumber].Thickness)
+            axes[0,i].set_ylim([0,MaxThickness])
 
                 
         axes[1,1].set_title('Top 3 Crenellation Patterns within the Final Population')

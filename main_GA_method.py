@@ -27,7 +27,11 @@ time_start = time.clock()
 #==============================================================================
 """
 #check the hard-coded EXPERIMENT ID in StorePopulationComposition method!
+#check the hard-coded EXPERIMENT ID in ShowTop3CrenellationPatterns method!
+
 ExperimentNumberID = 1
+np.random.seed(45)
+
 
 """
 Step 0. Collect all boundary conditions and material constants for the experiment chosen
@@ -109,7 +113,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
         
         if TerminationCondition == True:
             
-            PopulationComposition['Gen '+str(Generation)][1] = genetic_algorithm.Population.StoreGeneComposition(PopulationComposition['Gen '+str(Generation)][0], BC.T_dict[0], BC.n_total[0])
+            #PopulationComposition['Gen '+str(Generation)][1] = genetic_algorithm.Population.StoreGeneComposition(PopulationComposition['Gen '+str(Generation)][0], BC.T_dict[0], BC.n_total[0])
             
             """
             Extract the genotypes of all final chromosomes and add them to the PopulationComposition dictionary for analysis. 

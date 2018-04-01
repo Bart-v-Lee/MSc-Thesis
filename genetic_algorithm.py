@@ -74,10 +74,10 @@ class Population:
         
     def StoreGeneComposition(PopulationDataframe, t_dict, n_total):
         """
-        This method creates an array of all possible gene values and counts the frequency with which the gene value is present in the population at a certain generation.
-        This information is stored in a dictionary.
+        This method creates an empty array and counts the frequency with which each gene value is present in the population at a certain generation.
         """
-        print(t_dict)
+        print(PopulationDataframe)
+
         GeneArray = np.zeros((len(t_dict),n_total))
         ThicknessArray = np.sort(list(t_dict.values()), axis=None)
         
@@ -97,7 +97,9 @@ class Population:
         
             ParentRelations = PopulationDataframe.Relations[Genotype]
             GeneFrequency = 0
-            
+            """
+            Not use number of operations for counting the frequency of the gene in the population
+            """
             try:
                 for Operation in ParentRelations:
             
@@ -322,11 +324,14 @@ class Population:
                     continue
             
                 
-            # Either add the new chromosome with relations, or if it already exists, add the relations of its parents
+            # Either add the new chromosome with its relations, or if it already exists PopulationComposition, only add the relations of its parents
                 
             if Exists == True:
                 """
                 Only add the relations
+                """
+                """
+                Bart: check whether the crossover relation is correctly appended. Now not showing up in the PopulationComposition, therefore the GeneArray is incorrect
                 """
                 try:
                     PopulationDataframe.loc[ChromosomeNumber,"Relations"]["Crossover"].append(np.array([Parent1_ID,Parent2_ID]))                
@@ -738,22 +743,24 @@ class GeneticAlgorithm:
                 # update this method, still old version
                 PopulationOffspring  = genetic_algorithm.redistribution()
                 
-            else:
-                pass
+
             
             #insert both children into the OffspringPopulation
             
             for i in range(1,len(PopulationOffspring)):
                 
-                if PopulationOffspring.Chromosome[i] is None: # gives error when first individuals have been place, solve!
+                if PopulationOffspring.Chromosome[i] is None: 
                 
                     PopulationOffspring.Chromosome[i] = Child1
                     PopulationOffspring.Chromosome[i+1] = Child2
                     
                     # Store information on newly created chromosomes in the PopulationComposition dictionary
 
-#                    import main_GA_method as main
-#                    Children = [Child1, Child2]
+                    
+                    import main_GA_method as main
+                    import genetic_algorithm
+
+                    Children = [Child1, Child2]
 #                    for Child in range(0,len(Children)):
 #                        main.PopulationComposition['Gen '+str(main.Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = main.PopulationComposition['Gen '+str(main.Generation)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [Parent1,Parent2])
 #
@@ -775,11 +782,11 @@ class GeneticAlgorithm:
                     
                     Child1 = Parent1
                     Child2 = Parent2
-                    Children = [Parent1,Parent2]
-                    for Child in range(0,len(Children)):
-                        main.PopulationComposition['Gen '+str(main.Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = main.PopulationComposition['Gen '+str(main.Generation)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [Parent1,Parent2] )
+#                    Children = [Parent1,Parent2]
+#                    for Child in range(0,len(Children)):
+#                        main.PopulationComposition['Gen '+str(main.Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = main.PopulationComposition['Gen '+str(main.Generation)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [Parent1,Parent2] )
                  
-                    break
+#                    break
                
                 
                 
