@@ -76,7 +76,7 @@ class Population:
         """
         This method creates an empty array and counts the frequency with which each gene value is present in the population at a certain generation.
         """
-        print(PopulationDataframe)
+#        print(PopulationDataframe)
 
         GeneArray = np.zeros((len(t_dict),n_total))
         ThicknessArray = np.sort(list(t_dict.values()), axis=None)
@@ -201,7 +201,7 @@ class Population:
         The PopulationComposition dictionary contains all information on each individual of each generation during a single run of the algorithm.
         For each generation it stores information in a PopulationDataFrame, after which it is appended to the PopulationComposition dictionary for analysis.
         """
-        print(PopulationDataframe)
+#        print(PopulationDataframe)
         # Determine the new data based on the operation
         
         if Operation == "Initialization":
@@ -214,7 +214,7 @@ class Population:
             
             if len(PopulationDataframe) == 0:
                     NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness]})
-                    print(NewChromosome)
+#                    print(NewChromosome)
                     NewChromosome.Chromosome[0] = Chromosome
                     
                     PopulationDataframe = PopulationDataframe.append(NewChromosome, ignore_index = True)
@@ -315,7 +315,7 @@ class Population:
                 
                 if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
 
-                    ChromosomeNumber = ChromosomeNumber
+                    ChromosomeNumberExists = ChromosomeNumber
                     Exists = True
                     break
                 
@@ -331,13 +331,14 @@ class Population:
                 Only add the relations
                 """
                 """
-                Bart: check whether the crossover relation is correctly appended. Now not showing up in the PopulationComposition, therefore the GeneArray is incorrect
+                Bart: try statement is giving an error, therefore the relation is not appended
                 """
                 try:
-                    PopulationDataframe.loc[ChromosomeNumber,"Relations"]["Crossover"].append(np.array([Parent1_ID,Parent2_ID]))                
+                    PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Crossover"].append(np.array([Parent1_ID,Parent2_ID]))                
                 except:
-                    
-                    PopulationDataframe.loc[ChromosomeNumber, "Relations"] = {"Crossover": np.array([Parent1_ID,Parent2_ID])}
+                    Empty = []
+                    PopulationDataframe.loc[ChromosomeNumberExists, "Relations"] = {"Crossover": Empty}
+                    PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Crossover"].append(np.array([Parent1_ID,Parent2_ID]))                
             else:
                 """
                 Add the chromosome, relations and evaluate its fitness intermediately, since it might disappear again in the mutation operation.
@@ -393,15 +394,26 @@ class Population:
             """
             
             # lookup the parent ID in the PopulationDataframe
+            
+            Exists = None
             Parent_ID = None
             
             ParentThickness = Parents[0].Thickness
+            """
+            Bart: Every parent must exist in the dataframe. Why is it coming out false?
+            Is the ParentChromosome actually the newly created chromosome after mutation?
+            Therefore, if Exists is false, the new and parent chromosome are both not found in the PopulationComposition..
             
+            """
             for ChromosomeNumber in range(0,len(PopulationDataframe)):
                 
                 if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,ParentThickness):
                     
                     Parent_ID = ChromosomeNumber
+#                    print("Mutation parent ID", Parent_ID)
+
+                else:
+                    continue
             
             
             # lookup chromosome in PopulationDataframe
@@ -410,8 +422,9 @@ class Population:
                 
                 if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
 
-                    ChromosomeNumber = ChromosomeNumber
+                    ChromosomeNumberExists = ChromosomeNumber
                     Exists = True
+                    
                     break
                 
                 else:
@@ -419,41 +432,49 @@ class Population:
                     continue
             
             #check if the parent ID is the same as the child ID. If true, then mutation didnt take place.
-            if Parent_ID != ChromosomeNumber:
+#            if Parent_ID != ChromosomeNumberExists:
                 
-                if Exists == True:
-                    """
-                    Only add the relations
-                    """
-                    try:
-                        PopulationDataframe.loc[ChromosomeNumber,"Relations"]["Mutation"].append([Parent_ID])                
-                    except:
-                        try:
-                            PopulationDataframe.loc[ChromosomeNumber, "Relations"].update({"Mutation": [Parent_ID]})
-                        except:
-                            PopulationDataframe.loc[ChromosomeNumber, "Relations"] = {"Mutation": [Parent_ID]}
-                            
-                else:
-                    """
-                    Add the chromosome and relations
-                    """
-    
-    #
-    #                NewChromosome = pd.DataFrame(data = {'Chromosome' : [Chromosome]} )
-    #                
-    #                PopulationDataframe = PopulationDataframe.Chromosome.append(NewChromosome, ignore_index=False)
-    #
-    #                PopulationDataframe.Relations[PopulationDataframe.index[-1]]['Crossover'] = [Parent1_ID,Parent2_ID]  
-    #                
-                
-                    
-                    NewChromosome = pd.DataFrame(data = Chromosome)
-                    NewChromosomeDict = {'Chromosome':NewChromosome} 
-                    PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
-                    PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Mutation":[Parent_ID] }
-                
+            print(Exists)
+            
+            if Exists == True:
+                """
+                Only add the parent relation
+                """
+                try:
+                    print("Mutation parent ID", Parent_ID)
+
+                    PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Mutation"].append(np.array([Parent_ID]))                
+         
+                except:
+
+                    Empty = []
+                    PopulationDataframe.loc[ChromosomeNumberExists, "Relations"] = {"Mutation": Empty}
+                    PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Mutation"].append(np.array([Parent_ID]))   
+
+                        
             else:
-                pass
+                """
+                Add the new chromosome and relation to its parent
+                """
+
+#
+#                NewChromosome = pd.DataFrame(data = {'Chromosome' : [Chromosome]} )
+#                
+#                PopulationDataframe = PopulationDataframe.Chromosome.append(NewChromosome, ignore_index=False)
+#
+#                PopulationDataframe.Relations[PopulationDataframe.index[-1]]['Crossover'] = [Parent1_ID,Parent2_ID]  
+#                
+                print("Mutation parent ID", Parent_ID)
+
+                
+                NewChromosome = pd.DataFrame(data = Chromosome)
+                NewChromosomeDict = {'Chromosome':NewChromosome} 
+                PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
+
+                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Mutation":[Parent_ID] }
+                
+#            else:
+#                pass
             
         elif Operation == "Elitism":
             """
@@ -537,7 +558,7 @@ class GeneticAlgorithm:
             print("Objective function 3")
             import crenellation
             FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
-            print(FatigueCalculations)
+#            print(FatigueCalculations)
 
             Area = crenellation.CrenellationPattern.CalculatePlateArea(Chromosome.Thickness,Delta_a)
             
@@ -755,16 +776,14 @@ class GeneticAlgorithm:
                     PopulationOffspring.Chromosome[i+1] = Child2
                     
                     # Store information on newly created chromosomes in the PopulationComposition dictionary
+  
+#                    import genetic_algorithm
 
-                    
-                    import main_GA_method as main
-                    import genetic_algorithm
-
-                    Children = [Child1, Child2]
+#                    Children = [Child1, Child2]
 #                    for Child in range(0,len(Children)):
 #                        main.PopulationComposition['Gen '+str(main.Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = main.PopulationComposition['Gen '+str(main.Generation)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [Parent1,Parent2])
 #
-#                    break
+                    break
             
 
         else:
@@ -775,10 +794,9 @@ class GeneticAlgorithm:
 
                     PopulationOffspring.Chromosome[i] = Parent1
                     PopulationOffspring.Chromosome[i+1] = Parent2
-                    
+                                      
                     # Store information on newly created chromosome in the PopulationComposition dictionary
-                    import main_GA_method as main
-                    import genetic_algorithm
+#                    import genetic_algorithm
                     
                     Child1 = Parent1
                     Child2 = Parent2
@@ -786,9 +804,9 @@ class GeneticAlgorithm:
 #                    for Child in range(0,len(Children)):
 #                        main.PopulationComposition['Gen '+str(main.Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = main.PopulationComposition['Gen '+str(main.Generation)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [Parent1,Parent2] )
                  
-#                    break
+                    break
                
-                
+        print(PopulationOffspring.Chromosome, "Population Offspring") 
                 
         return PopulationOffspring, Child1, Child2
         

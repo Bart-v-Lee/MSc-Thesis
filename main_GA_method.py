@@ -135,6 +135,8 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
           
 
             PopulationFinal = PopulationCurrent
+            
+            break
 
         
         else: 
@@ -160,7 +162,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 
                 PopulationParents = genetic_algorithm.GeneticAlgorithm.CalculateReproductionProbParents(PopulationCurrentSelected, BC.RankingOperator[0])
                 
-                # Store population data Pp
+                # Store population data Pp to PopulationComposition dataframe
                 
                 for IndividualNumber in range(1,len(PopulationParents)+1):
                 
@@ -172,32 +174,40 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 """
                 
                 PopulationOffspring = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
+                
+#                print(PopulationOffspring, "empty Population Offspring")
+                
+                NumberOfRecombinations = []
         
                 while PopulationOffspring.tail(1).Chromosome[BC.N_pop[0]] is None: #keep recombining until the entire PopulationOffspring is filled with solutions
                     
                     ParentSelected1, ParentSelected2 = genetic_algorithm.GeneticAlgorithm.SelectParents(PopulationParents)
                     
+
                     """
                     Step 6. Crossover of the selected parent solutions
                     """
                     
                     PopulationOffspring, Child1, Child2 = genetic_algorithm.GeneticAlgorithm.RecombineParents(PopulationParents.Chromosome[ParentSelected1], PopulationParents.Chromosome[ParentSelected2], PopulationOffspring, BC.Pc[0], BC.W[0], BC.CrossoverOperator[0], CONSTRAINTS, BC.n_total[0])
                 
+                    # Store the offspring relations in the PopulationComposition dictionary
+
                     Children = [Child1, Child2]
                     for Child in range(0,len(Children)):
                         PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]])
     
-
                             
-            # if Crossover is not enabled, the surviving population becomes the offspring population. !The size still needs to increase with twice the size!
+            # if Crossover is not enabled, the surviving population becomes the offspring population. Bart: The size still needs to increase with a size, depending on Rs!
                             
             else:
                 PopulationOffspring = PopulationCurrentSelected # if crossover has been disabled, the surviving population becomes the offspring population
                     
+                # Store the offspring relations into the PopulationComposition dictionary
+                
                 for IndividualNumber in range(1,len(PopulationOffspring)):
                     
                     PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]])
-    
+                    
                 
             """
             Step 7. Mutation of Offspring population
@@ -208,10 +218,17 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 for IndividualNumber in range(1,len(PopulationOffspring)+1):
                     print("Starting mutation of the Offspring Population for Individual...", IndividualNumber)
                     ParentChromosome = PopulationOffspring.Chromosome[IndividualNumber]
-                    PopulationOffspring.Chromosome[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.MutatePopulation(PopulationOffspring.Chromosome[IndividualNumber], BC.MutationOperator[0], BC.Pm[0], BC.n_total[0], BC.W[0],  BC.T_dict[0], CONSTRAINTS)
-                    """
-                    New line
-                    """
+
+                    ChildChromosome = genetic_algorithm.GeneticAlgorithm.MutatePopulation(PopulationOffspring.Chromosome[IndividualNumber], BC.MutationOperator[0], BC.Pm[0], BC.n_total[0], BC.W[0],  BC.T_dict[0], CONSTRAINTS)
+                    PopulationOffspring.Chromosome[IndividualNumber] = ChildChromosome
+                    
+                    Identical = None
+                    if np.array_equal(ParentChromosome.Thickness,ChildChromosome.Thickness):
+                        Identical = True
+                    else:
+                        Identical = False
+                    # Store the relations after mutating into the PopulationComposition dictionary
+
                     PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Mutation", Chromosome = PopulationOffspring.Chromosome[IndividualNumber] , Fitness = 0, Pp = None, Parents = [ParentChromosome])
 
     
