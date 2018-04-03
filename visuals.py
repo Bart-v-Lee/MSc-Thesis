@@ -98,8 +98,10 @@ class PopulationVisuals:
     
 
     
-    def ShowPopulationComposition(t_dict, ):
-
+    def ShowPopulationComposition(PopulationDataframe):
+        """
+        This method shows the Gene composition for a single generation, as specified by the input
+        """
         
         
         
@@ -109,6 +111,8 @@ class PopulationVisuals:
         
         pass
         
+
+    
         
         
         
