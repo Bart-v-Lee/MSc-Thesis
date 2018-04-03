@@ -12,6 +12,8 @@ import crenellation
 import sys
 import copy
 import math
+import matplotlib.pyplot as pp
+
 
 class Population:
     """A set of solutions, in GA terms a " Population of individuals". A population has the following attributes:
@@ -395,26 +397,28 @@ class Population:
             
             # lookup the parent ID in the PopulationDataframe
             
-            Exists = None
+            ChildPreviouslyExists = None
+            ChromosomeNumberExists = None
             Parent_ID = None
             
             ParentThickness = Parents[0].Thickness
-            """
-            Bart: Every parent must exist in the dataframe. Why is it coming out false?
-            Is the ParentChromosome actually the newly created chromosome after mutation?
-            Therefore, if Exists is false, the new and parent chromosome are both not found in the PopulationComposition..
-            
-            """
+
             for ChromosomeNumber in range(0,len(PopulationDataframe)):
                 
                 if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,ParentThickness):
                     
                     Parent_ID = ChromosomeNumber
-#                    print("Mutation parent ID", Parent_ID)
+                    print("Mutation parent ID", Parent_ID)
 
                 else:
                     continue
-            
+                
+            if Parent_ID == None:
+                pp.figure(2000)
+                pp.plot(ParentThickness)
+                pp.figure(2001)
+                pp.plot(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness)
+                sys.exit("Parent not found. Every mutated individual should have a parent")
             
             # lookup chromosome in PopulationDataframe
             
@@ -423,58 +427,50 @@ class Population:
                 if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
 
                     ChromosomeNumberExists = ChromosomeNumber
-                    Exists = True
+                    ChildPreviouslyExists = True
                     
                     break
                 
                 else:
-                    Exists = False
+                    ChildPreviouslyExists = False
                     continue
             
             #check if the parent ID is the same as the child ID. If true, then mutation didnt take place.
-#            if Parent_ID != ChromosomeNumberExists:
+            if Parent_ID != ChromosomeNumberExists:
                 
-            print(Exists)
+                print("Individual is Mutated from individual ",Parent_ID, " to ",ChromosomeNumberExists)
             
-            if Exists == True:
-                """
-                Only add the parent relation
-                """
-                try:
-                    print("Mutation parent ID", Parent_ID)
-
-                    PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Mutation"].append(np.array([Parent_ID]))                
-         
-                except:
-
-                    Empty = []
-                    PopulationDataframe.loc[ChromosomeNumberExists, "Relations"] = {"Mutation": Empty}
-                    PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Mutation"].append(np.array([Parent_ID]))   
-
-                        
+                if ChildPreviouslyExists == True:
+                    """
+                    Then only add the parent relation, no new entry
+                    """
+                    try:
+    #                    print("Mutation parent ID", Parent_ID)
+    
+                        PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Mutation"].append(np.array([Parent_ID]))                
+             
+                    except:
+    
+                        Empty = []
+                        PopulationDataframe.loc[ChromosomeNumberExists, "Relations"] = {"Mutation": Empty}
+                        PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Mutation"].append(np.array([Parent_ID]))   
+    
+                            
+                else:
+                    """
+                    Add the new chromosome as a entry and include the relation to its parent
+                    """               
+#                    print("Mutation parent ID", Parent_ID)
+    
+                    
+                    NewChromosome = pd.DataFrame(data = Chromosome)
+                    NewChromosomeDict = {'Chromosome':NewChromosome} 
+                    PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
+    
+                    PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Mutation":[Parent_ID] }
+                
             else:
-                """
-                Add the new chromosome and relation to its parent
-                """
-
-#
-#                NewChromosome = pd.DataFrame(data = {'Chromosome' : [Chromosome]} )
-#                
-#                PopulationDataframe = PopulationDataframe.Chromosome.append(NewChromosome, ignore_index=False)
-#
-#                PopulationDataframe.Relations[PopulationDataframe.index[-1]]['Crossover'] = [Parent1_ID,Parent2_ID]  
-#                
-                print("Mutation parent ID", Parent_ID)
-
-                
-                NewChromosome = pd.DataFrame(data = Chromosome)
-                NewChromosomeDict = {'Chromosome':NewChromosome} 
-                PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
-
-                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Mutation":[Parent_ID] }
-                
-#            else:
-#                pass
+                pass
             
         elif Operation == "Elitism":
             """
@@ -929,7 +925,7 @@ class GeneticAlgorithm:
     #==============================================================================
     """
     
-    def MutatePopulation(Chromosome, MutationOperator, Pm, n_total, W, t_dict, Constraints):
+    def MutateChromosome(Chromosome, MutationOperator, Pm, n_total, W, t_dict, Constraints):
         """
         This method outputs a mutated chromosome of a single solution, in GA terms "chromosome", whose chromosome has been mutated. 
         Mutation can be performed in different ways, which is determined by the chosen MutationOperator.

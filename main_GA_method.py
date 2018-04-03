@@ -214,24 +214,31 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             """
             
             if BC.Mutation[0] == str(True):
-            
+                
                 for IndividualNumber in range(1,len(PopulationOffspring)+1):
                     print("Starting mutation of the Offspring Population for Individual...", IndividualNumber)
-                    ParentChromosome = PopulationOffspring.Chromosome[IndividualNumber]
+                    ParentChromosome = PopulationOffspring.Chromosome.loc[IndividualNumber].copy()
 
-                    ChildChromosome = genetic_algorithm.GeneticAlgorithm.MutatePopulation(PopulationOffspring.Chromosome[IndividualNumber], BC.MutationOperator[0], BC.Pm[0], BC.n_total[0], BC.W[0],  BC.T_dict[0], CONSTRAINTS)
+                    ChildChromosome = genetic_algorithm.GeneticAlgorithm.MutateChromosome(PopulationOffspring.Chromosome.loc[IndividualNumber], BC.MutationOperator[0], BC.Pm[0], BC.n_total[0], BC.W[0],  BC.T_dict[0], CONSTRAINTS)
+                    
                     PopulationOffspring.Chromosome[IndividualNumber] = ChildChromosome
                     
                     Identical = None
-                    if np.array_equal(ParentChromosome.Thickness,ChildChromosome.Thickness):
+                    if np.array_equal(ParentChromosome.Thickness,PopulationOffspring.Chromosome.loc[IndividualNumber].Thickness):
                         Identical = True
+                        
                     else:
                         Identical = False
+#
+                    print(Identical)
+                    """
+                    Parent_ID from Offspring Population is not the same as Parent_ID from PopulationComposition!!
+                    """
                     # Store the relations after mutating into the PopulationComposition dictionary
 
-                    PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Mutation", Chromosome = PopulationOffspring.Chromosome[IndividualNumber] , Fitness = 0, Pp = None, Parents = [ParentChromosome])
+                    PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Mutation", Chromosome = ChildChromosome, Fitness = 0, Pp = None, Parents = [ParentChromosome])
 
-    
+            
             """
             Extract the genotypes of all new chromosomes and add them to the PopulationComposition dictionary for analysis. 
             Calculate PopulationGeneComposition array for analysis.
