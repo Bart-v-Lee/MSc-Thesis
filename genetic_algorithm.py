@@ -222,7 +222,7 @@ class Population:
                     PopulationDataframe = PopulationDataframe.append(NewChromosome, ignore_index = True)
                     PopulationDataframe.Relations[0] = {'Initialization':[0]}
 
-                    print("first chromosome added")
+#                    print("first chromosome added")
                     
             else:
             # Check whether the chromosome historically exists in the PopulationDataframe
@@ -288,7 +288,7 @@ class Population:
                     else:
                         PopulationDataframe.at[ChromosomeNumber,"Pp"] += Pp
 
-            
+        
         elif Operation == "Crossover":
             """
             New data points : chromosome, parents
@@ -353,12 +353,11 @@ class Population:
 #
 #                PopulationDataframe.Relations[PopulationDataframe.index[-1]]['Crossover'] = [Parent1_ID,Parent2_ID]  
 #                
-            
                 
                 NewChromosome = pd.DataFrame(data = Chromosome)
                 NewChromosomeDict = {'Chromosome':NewChromosome} 
                 PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
-                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Crossover":np.array([Parent1_ID,Parent2_ID]) }
+                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Crossover":np.array([Parent1_ID,Parent2_ID])}
                 
                 #the child solution has not been found before, evaluate its fitness such that it is stored in the PopulationComposition dataframe before the child is potentially mutated and the solution is lost
 
@@ -392,7 +391,7 @@ class Population:
                 
         elif Operation == "Mutation":
             """
-            New data points : chromosome, parents
+            New data points: chromosome, parents
             """
             
             # lookup the parent ID in the PopulationDataframe
@@ -413,12 +412,12 @@ class Population:
                 else:
                     continue
                 
-            if Parent_ID == None:
-                pp.figure(2000)
-                pp.plot(ParentThickness)
-                pp.figure(2001)
-                pp.plot(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness)
-                sys.exit("Parent not found. Every mutated individual should have a parent")
+#            if Parent_ID == None:
+#                pp.figure(2000)
+#                pp.plot(ParentThickness)
+#                pp.figure(2001)
+#                pp.plot(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness)
+#                sys.exit("Parent not found. Every mutated individual should have a parent")
             
             # lookup chromosome in PopulationDataframe
             
@@ -438,17 +437,19 @@ class Population:
             #check if the parent ID is the same as the child ID. If true, then mutation didnt take place.
             if Parent_ID != ChromosomeNumberExists:
                 
-                print("Individual is Mutated from individual ",Parent_ID, " to ",ChromosomeNumberExists)
+                print("Individual is Mutated from individual ",Parent_ID," to ",ChromosomeNumberExists)
             
                 if ChildPreviouslyExists == True:
                     """
-                    Then only add the parent relation, no new entry
+                    Then only add the parent relation, no new entry as the individual was previously 'found' and placed in the PopulationComposition dictionary
                     """
                     try:
     #                    print("Mutation parent ID", Parent_ID)
-    
-                        PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Mutation"].append(np.array([Parent_ID]))                
-             
+                        
+                        # Bart: this function was not working, therefore relations are overwritten in the Except statement. Now it has been fixed.
+                        
+                        PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Mutation"] = np.array([Parent_ID])             
+                    
                     except:
     
                         Empty = []
@@ -802,8 +803,10 @@ class GeneticAlgorithm:
                  
                     break
                
-        print(PopulationOffspring.Chromosome, "Population Offspring") 
-                
+#        print(PopulationOffspring.Chromosome, "Population Offspring") 
+        
+
+        
         return PopulationOffspring, Child1, Child2
         
     """
@@ -825,7 +828,7 @@ class GeneticAlgorithm:
             """
             # Choose the crossover point randomly
             
-            NumberOfCrossoverPoints = n_total-1
+            NumberOfCrossoverPoints = int(0.5*n_total)-1
             CrossoverPoint = int(np.random.choice(NumberOfCrossoverPoints,1))+1
             HalfChromosome = int(0.5*W)
             
