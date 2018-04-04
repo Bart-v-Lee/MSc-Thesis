@@ -13,10 +13,7 @@ Created on Wed Sep 20 14:46:57 2017
 
 import numpy as np
 import time
-from numpy import *
 import matplotlib.pyplot as pp
-import pandas as pd
-import json
 #from multiprocessing import Pool
 
 time_start = time.clock()
@@ -60,6 +57,8 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
         
 #    Population = genetic_algorithm.Population(BC.N_pop[0]) #object initiated with its instance variables
     PopulationInitial = genetic_algorithm.Population.InitializePopulation(BC.n_total[0], BC.Delta_a[0], BC.W[0], BC.N_pop[0], BC.T_dict[0], BC.SeedSettings[0], BC.SeedNumber[0], CONSTRAINTS) 
+    PopulationOffspring = None #start out with an empty PopulationOffspring
+    
     
     # Initialize the PopulationComposition dictionary
     PopulationComposition = genetic_algorithm.Population.CreatePopulationCompositionDictionary(BC.NumberOfGenerations[0])
@@ -96,11 +95,11 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             PopulationCurrent = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
             
             for IndividualNumber in range(1,int(BC.N_pop)+1):
-                
+                            
                 PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationOffspring.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
                 
                 PopulationCurrent.Chromosome[IndividualNumber] = PopulationOffspring.Chromosome[IndividualNumber]
-        
+                
                 #Store information into the PopulationComposition dictionary
                 PopulationComposition['Gen '+str(Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)][0], Operation = "Evaluation", Chromosome = PopulationCurrent.Chromosome[IndividualNumber] , Fitness = PopulationCurrent.Fitness[IndividualNumber], Pp = None, Parents = 0)
   
@@ -190,6 +189,12 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                     
                     PopulationOffspring, Child1, Child2 = genetic_algorithm.GeneticAlgorithm.RecombineParents(PopulationParents.Chromosome[ParentSelected1], PopulationParents.Chromosome[ParentSelected2], PopulationOffspring, BC.Pc[0], BC.W[0], BC.CrossoverOperator[0], CONSTRAINTS, BC.n_total[0])
                 
+#                    if Generation ==1: 
+#                        pp.figure(1000)
+#                        pp.plot(Child1.Thickness)
+#                        pp.plot(Child2.Thickness)
+#                    
+                    
                     # Store the offspring relations in the PopulationComposition dictionary
 
                     Children = [Child1, Child2]
@@ -203,7 +208,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 PopulationOffspring = PopulationCurrentSelected # if crossover has been disabled, the surviving population becomes the offspring population
                     
                 # Store the offspring relations into the PopulationComposition dictionary
-                
+
                 for IndividualNumber in range(1,len(PopulationOffspring)):
                     
                     PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]])
@@ -215,10 +220,15 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             
             if BC.Mutation[0] == str(True):
                 
+#                reviewThis = PopulationOffspring.copy()
+                
                 for IndividualNumber in range(1,len(PopulationOffspring)+1):
                     print("Starting mutation of the Offspring Population for Individual...", IndividualNumber)
-                    ParentChromosome = PopulationOffspring.Chromosome.loc[IndividualNumber].copy()
-
+#                    print(PopulationOffspring.Chromosome.loc[IndividualNumber].Thickness)
+                    ParentChromosome = PopulationOffspring.Chromosome.loc[IndividualNumber].copy() #removed .copy()
+                    
+                    
+                    
                     ChildChromosome = genetic_algorithm.GeneticAlgorithm.MutateChromosome(PopulationOffspring.Chromosome.loc[IndividualNumber], BC.MutationOperator[0], BC.Pm[0], BC.n_total[0], BC.W[0],  BC.T_dict[0], CONSTRAINTS)
                     
                     PopulationOffspring.Chromosome[IndividualNumber] = ChildChromosome
@@ -226,7 +236,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                     Identical = None
                     if np.array_equal(ParentChromosome.Thickness,PopulationOffspring.Chromosome.loc[IndividualNumber].Thickness):
                         Identical = True
-                        
+                    
                     else:
                         Identical = False
 #
@@ -258,7 +268,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             PopulationComposition['Gen '+str(Generation)][1] = genetic_algorithm.Population.StoreGeneComposition(PopulationComposition['Gen '+str(Generation)][0], BC.T_dict[0], BC.n_total[0])
           
             
-
+    
     """
     #==============================================================================
     #                              Genetic Algorithm END
