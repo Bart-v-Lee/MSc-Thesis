@@ -477,6 +477,88 @@ class Population:
             """
             New data points : chromosome, parents
             """
+            """
+            New data points: chromosome, parents
+            """
+            
+            # lookup the parent ID in the PopulationDataframe
+            
+            ChildPreviouslyExists = None
+            ChromosomeNumberExists = None
+            Parent_ID = None
+            
+            ParentThickness = Parents[0].Thickness
+
+            for ChromosomeNumber in range(0,len(PopulationDataframe)):
+                
+                if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,ParentThickness):
+                    
+                    Parent_ID = ChromosomeNumber
+                    print("Mutation parent ID", Parent_ID)
+
+                else:
+                    continue
+                
+#            if Parent_ID == None:
+#                pp.figure(2000)
+#                pp.plot(ParentThickness)
+#                pp.figure(2001)
+#                pp.plot(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness)
+#                sys.exit("Parent not found. Every mutated individual should have a parent")
+            
+            # lookup chromosome in PopulationDataframe
+            
+            for ChromosomeNumber in range(0,len(PopulationDataframe)):
+                
+                if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
+
+                    ChromosomeNumberExists = ChromosomeNumber
+                    ChildPreviouslyExists = True
+                    
+                    break
+                
+                else:
+                    ChildPreviouslyExists = False
+                    continue
+            
+            #check if the parent ID is the same as the child ID. If true, then mutation didnt take place.
+            if Parent_ID != ChromosomeNumberExists:
+                
+                print("Individual is Mutated from individual ",Parent_ID," to ",ChromosomeNumberExists)
+            
+                if ChildPreviouslyExists == True:
+                    """
+                    Then only add the parent relation, no new entry as the individual was previously 'found' and placed in the PopulationComposition dictionary
+                    """
+                    try:
+    #                    print("Mutation parent ID", Parent_ID)
+                        
+                        # Bart: this function was not working, therefore relations are overwritten in the Except statement. Now it has been fixed.
+                        
+                        PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Elitism"] = np.array([Parent_ID])             
+                    
+                    except:
+    
+                        Empty = []
+                        PopulationDataframe.loc[ChromosomeNumberExists, "Relations"] = {"Elitism": Empty}
+                        PopulationDataframe.loc[ChromosomeNumberExists,"Relations"]["Elitism"].append(np.array([Parent_ID]))   
+    
+                            
+                else:
+                    """
+                    Add the new chromosome as a entry and include the relation to its parent
+                    """               
+#                    print("Mutation parent ID", Parent_ID)
+    
+                    
+                    NewChromosome = pd.DataFrame(data = Chromosome)
+                    NewChromosomeDict = {'Chromosome':NewChromosome} 
+                    PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
+    
+                    PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Elitism":[Parent_ID] }
+                
+            else:
+                pass
         
         
         # Store information in the DataFrame
@@ -834,7 +916,7 @@ class GeneticAlgorithm:
             
             # Translate the crossover point to a point in the array of the chromosome calculating delta_x as the container width
             
-            Delta_x = ((0.5*W) / n_total) #0.5 because of the symmetry constraint
+            Delta_x = ((0.5*W) / (0.5*n_total)) #0.5 because of the symmetry constraint
             
             # Exchange the chromosomes between both parents
 
@@ -945,13 +1027,11 @@ class GeneticAlgorithm:
             
             n_totalSymmetry = int(0.5 * n_total)
             delta_x = int((0.5*W) / n_totalSymmetry)
-        
             n_total =  n_totalSymmetry
             
         else:
             delta_x = int(W / n_total)
 
-        
         if MutationOperator == "Set 1":
             ChromosomeMutated = genetic_algorithm.GeneticAlgorithm.MutateRandom(Chromosome, Pm, n_total, W, t_dict, delta_x, Constraints)
             
@@ -984,7 +1064,7 @@ class GeneticAlgorithm:
             MutationRandomGenerator = np.random.uniform(0.0,1.0)
             
             if MutationRandomGenerator < Pm:
-#                print("Mutation took place")
+                # print("Mutation took place")
                 
                 # Retrieve the current container thickness
 
@@ -1011,7 +1091,7 @@ class GeneticAlgorithm:
                     ChromosomeLeft = Chromosome.Thickness[:(n_total*delta_x)]
                     ChromosomeRight = np.flipud(ChromosomeLeft)
                     
-                    Chromosome.Thickness[(n_total*delta_x):] = ChromosomeRight
+                    Chromosome.Thickness[(n_total*delta_x):] = ChromosomeRight 
                 
             else:
                 continue

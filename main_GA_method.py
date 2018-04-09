@@ -13,7 +13,7 @@ Created on Wed Sep 20 14:46:57 2017
 
 import numpy as np
 import time
-import matplotlib.pyplot as pp
+#import matplotlib.pyplot as pp
 #from multiprocessing import Pool
 
 time_start = time.clock()
@@ -26,7 +26,7 @@ time_start = time.clock()
 #check the hard-coded EXPERIMENT ID in StorePopulationComposition method!
 #check the hard-coded EXPERIMENT ID in ShowTop3CrenellationPatterns method!
 
-ExperimentNumberID = 1
+ExperimentNumberID = 1 # can be used to select different sets of boundary conditions from the database
 np.random.seed(45)
 
 
@@ -128,12 +128,18 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 
                 PopulationComposition['Gen '+str(Generation)][0].Genotype[UniqueChromosome] = genetic_algorithm.Population.ExtractGenotype(PopulationComposition['Gen '+str(Generation)][0].loc[UniqueChromosome,"Chromosome"] , BC.Delta_a[0], BC.n_total[0], BC.W[0])
                     
-            # Calculate and Store GeneComposition for the current generation  
+            # Calculate and Store GeneComposition for the current generation
             
             PopulationComposition['Gen '+str(Generation)][1] = genetic_algorithm.Population.StoreGeneComposition(PopulationComposition['Gen '+str(Generation)][0], BC.T_dict[0], BC.n_total[0])
           
-
+            
+            # Create dataframe for final population, for easy reference
             PopulationFinal = PopulationCurrent
+            # Extract Genotypes for the individuals in the final population dataframe (not most efficient, could fix this later)
+            for UniqueChromosome in range(1,len(PopulationFinal)+1):
+
+                PopulationFinal.Genotype[UniqueChromosome] = genetic_algorithm.Population.ExtractGenotype(PopulationFinal.loc[UniqueChromosome,"Chromosome"] , BC.Delta_a[0], BC.n_total[0], BC.W[0])
+                  
             
             break
 
@@ -146,7 +152,6 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             """
             
             PopulationComposition = genetic_algorithm.Population.TransferPopulation(Generation, PopulationComposition)
-            
             
             """
             Step 3. Select the fittest solutions
@@ -211,7 +216,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
 
                 for IndividualNumber in range(1,len(PopulationOffspring)):
                     
-                    PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]])
+                    PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Elitism", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]])
                     
                 
             """
@@ -226,8 +231,6 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                     print("Starting mutation of the Offspring Population for Individual...", IndividualNumber)
 #                    print(PopulationOffspring.Chromosome.loc[IndividualNumber].Thickness)
                     ParentChromosome = PopulationOffspring.Chromosome.loc[IndividualNumber].copy() #removed .copy()
-                    
-                    
                     
                     ChildChromosome = genetic_algorithm.GeneticAlgorithm.MutateChromosome(PopulationOffspring.Chromosome.loc[IndividualNumber], BC.MutationOperator[0], BC.Pm[0], BC.n_total[0], BC.W[0],  BC.T_dict[0], CONSTRAINTS)
                     
@@ -286,11 +289,15 @@ import visuals
 
 # Sort the Final Population based on Fitness
 
-PopulationFinal = PopulationCurrent.sort_values("Fitness", ascending= False, kind='mergesort')
+PopulationFinal = PopulationFinal.sort_values("Fitness", ascending= False, kind='mergesort')
 
 # Show top 3 crenellation patterns in the Final Population
 
 visuals.FatigueVisuals.ShowTop3CrenellationPatterns(PopulationFinal, PopulationInitial)
+
+# Show GeneComposition for intervals of generations
+
+# visuals.PopulationVisuals.ShowPopulationConvergence(PopulationComposition, BC.NumberOfGenerations[0])
 
 
 """
