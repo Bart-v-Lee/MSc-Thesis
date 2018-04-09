@@ -52,11 +52,12 @@ class FatigueVisuals:
         
     def ShowTop3CrenellationPatterns(PopulationFinal, PopulationInitial):
         """
-        This method visually plots the top 3 crenellation patterns in the initial and the final population
+        This method plots the top 3 crenellation patterns in the initial and the final population
         """
-        
+        PopulationFinal = PopulationFinal.reset_index()
         
         PopulationInitialRanked = PopulationInitial.sort_values("Fitness", ascending=False, kind = 'mergesort')
+        PopulationInitialRanked = PopulationInitialRanked.reset_index()
         
         ExperimentNumberID = 1
 
@@ -66,11 +67,11 @@ class FatigueVisuals:
         
         fig, axes = pp.subplots(nrows=2, ncols=3, figsize=(15,6))
         
-        for IndividualNumber in range(1,4):
+        for i in range(0,3):
             
             # Final Population Plots 
             
-            i = IndividualNumber -1
+            IndividualNumber = i + 1
                     
             axes[1,i].plot(PopulationFinal.Chromosome[IndividualNumber].Thickness)
             axes[1,i].fill_between(PopulationFinal.Chromosome[IndividualNumber].Width, 0, PopulationFinal.Chromosome[IndividualNumber].Thickness, facecolor='green')
@@ -78,7 +79,7 @@ class FatigueVisuals:
             
             # Initial Population Figures
             
-            axes[0,i].plot(PopulationInitial.Chromosome[IndividualNumber].Thickness)
+            axes[0,i].plot(PopulationInitialRanked.Chromosome[IndividualNumber].Thickness)
             axes[0,i].fill_between(PopulationInitialRanked.Chromosome[IndividualNumber].Width, 0, PopulationInitialRanked.Chromosome[IndividualNumber].Thickness)
             axes[0,i].set_ylim([0,MaxThickness])
 
@@ -87,7 +88,6 @@ class FatigueVisuals:
         
         axes[0,1].set_title('Top 3 Crenellation Patterns within the Initial Population')
         
-
         
         pp.tight_layout()
         pp.show()
@@ -102,9 +102,7 @@ class PopulationVisuals:
         """
         This method shows the Gene composition for a single generation, as specified by the input
         """
-        
-        
-        
+
         
         
         
@@ -132,12 +130,12 @@ class PopulationVisuals:
         
         
     
-    def ShowPopulationConvergence():
+    def ShowPopulationConvergence(PopulationComposition, NumberOfGenerations):
         """
-        This method visualizes the stored information of the dictionary population composition along the generations
+        This method visualizes the stored information of the dictionary population composition along the generations, for 0%, 50% and 100% progression of generations
         """
         
-        
+        HalfGenerations = int(NumberOfGenerations / 2)
         
         
         
