@@ -360,13 +360,13 @@ class Population:
                 PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Crossover":np.array([Parent1_ID,Parent2_ID])}
                 
                 #the child solution has not been found before, evaluate its fitness such that it is stored in the PopulationComposition dataframe before the child is potentially mutated and the solution is lost
-
-                import genetic_algorithm 
+                
+                import genetic_algorithm
                 import database_connection
                 BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID=1)
                 MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
                 
-                PopulationDataframe.loc[PopulationDataframe.index[-1],"Fitness"] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],Chromosome, BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
+                PopulationDataframe.loc[PopulationDataframe.index[-1],"Fitness"], FatigueCalculations = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],Chromosome, BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
 
                 
 #                Exists = False
@@ -643,15 +643,43 @@ class GeneticAlgorithm:
             
             FitnessValue = FatigueLife / (Area**m)
             
-            
-        elif Fitness_Function_ID == "Set 4":
-            """
-            Objective function F = x1 * N_life,1 + x2 * N_life,2 + x3 * N_life,3
-            """
-            FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
+#            
+#        elif Fitness_Function_ID == "Set 4":
+#            """
+#            Objective function F = x1 * N_life,1 + x2 * N_life,2 + x3 * N_life,3
+#            """
+#            print("Objective function 4")
+#            FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
+#            
+#            Weights = [100,1,1]
+#            x1, x2, x3 = Weights
+#            NumberOfFractions = len(Weights)
+#            
+#            import fatigue
+#            N_life1, N_life2, N_life3 = fatigue.FatigueCalculations.ReturnFatigueLifeFractions(Chromosome, FatigueCalculations, NumberOfFractions, a_0, a_max)
+#
+#            FitnessValue = x1*N_life1 + x2*N_life2 + x3*N_life3
+#            print("NL1", x1*N_life1, "NL2", x2*N_life2, "NL3", x3*N_life3)
+#            
+#            import crenellation
+#            Area = crenellation.CrenellationPattern.CalculatePlateArea(Chromosome.Thickness,Delta_a)
+#
+#            FitnessValue = FatigueLife / (Area**m)
 
-        
             
+                    
+        elif Fitness_Function_ID == "Set 5":
+            """
+            Objective function F = A^m / N_life
+            """
+            import crenellation
+            FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
+#            print(FatigueCalculations)
+
+            Area = crenellation.CrenellationPattern.CalculatePlateArea(Chromosome.Thickness,Delta_a)
+            
+            FitnessValue = (Area**m) / FatigueLife
+        
             
             
         else:
@@ -938,7 +966,38 @@ class GeneticAlgorithm:
             Child1.Width = Width
             Child2.Width = Width
             
-            return Child1, Child2
+        else:
+            """
+            Considers all the crossoverpoints as the plate does not have to be symmetric
+            """
+            # Choose the crossover point randomly
+            
+            NumberOfCrossoverPoints = int(n_total)-1
+            CrossoverPoint = int(np.random.choice(NumberOfCrossoverPoints,1))+1
+            
+            # Translate the crossover point to a point in the array of the chromosome calculating delta_x as the container width
+            
+            Delta_x = ((W) / (n_total)) 
+            
+            # Exchange the chromosomes between both parents
+
+            Child1Thickness = np.append(Parent1.Thickness[:int(CrossoverPoint*Delta_x)], Parent2.Thickness[int(CrossoverPoint*Delta_x):])                # left side of Parent1 and right side of Parent2
+            Child2Thickness = np.append(Parent2.Thickness[:int(CrossoverPoint*Delta_x)], Parent1.Thickness[int(CrossoverPoint*Delta_x):])                # left side of Parent2 and right side of Parent1
+            
+
+            import database_connection
+            Child1 = database_connection.Database.RetrieveChromosomeDataframe() #empty chromosome dataframes
+            Child2 = database_connection.Database.RetrieveChromosomeDataframe()
+            
+            # Place Children in Chromsome dataframes
+            
+            Child1.Thickness = Child1Thickness
+            Child2.Thickness = Child2Thickness
+            Width = np.linspace(1,W, W)
+            Child1.Width = Width
+            Child2.Width = Width
+            
+        return Child1, Child2
         
     
     def CrossoverUniform(self):
@@ -1068,7 +1127,7 @@ class GeneticAlgorithm:
                 
                 # Retrieve the current container thickness
 
-                CurrentContainerThickness = Chromosome.Thickness[(ContainerNumber*delta_x)]
+                CurrentContainerThickness = Chromosome.Thickness[(ContainerNumber*delta_x)-1] #added -1 for the nonsymmetry plate, as it gave "out of bounds" error for 150 (which is the edge of the plate)
                 
                 # Randomly choose another thickness from the thickness dictionary t_dict
                 

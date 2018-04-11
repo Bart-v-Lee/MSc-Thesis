@@ -5,7 +5,9 @@ Created on Wed Sep 20 14:46:57 2017
 
 @author: Bart van der Lee
 @project: MSc thesis 
+"""
 
+"""
 #==============================================================================
 #                          Import packages 
 #==============================================================================
@@ -309,7 +311,6 @@ Store the GA data per run to CSV file
 """
 
 #convergence_overview.to_pickle("reference_Lu_GA_convergence_run_"+str(run)+"")
-
 
 """  
 #==============================================================================
