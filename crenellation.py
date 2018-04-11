@@ -30,16 +30,38 @@ class CrenellationPattern:
         self.t_dict = t_dict
 
 
-    def ConstructChromosomeSeed(SeedNumber, delta_a, W, t_dict): #previous use_seed
+    def ConstructChromosomeSeed(SeedNumber, delta_a, W): #previous use_seed
         """
-        Retrieves the shape of the seed design from the database based on the SeedNumber provided and scales the seed design shape 
+        Retrieves the genotype of the seed design from the database based on the SeedNumber provided and transforms the genotype into the crenellation pattern
         to fit the given boundary conditions (delta_x, W, t_dict).
         """
-        t_pattern = CrenellationPattern.RetrieveSeedShape(SeedNumber)
+        import database_connection
+        GenotypeSeed = database_connection.Database.RetrieveSeedShape(SeedNumber)
+                
+        Chromosome = database_connection.Database.RetrieveChromosomeDataframe()
             
-        # add code to scale the shape to the provided boundary conditions
+        # add code to transform the genotype to the provided boundary conditions
         
-        return t_pattern      
+        Width = np.linspace(1,W, W)
+        Thickness  = np.zeros(np.int(W/delta_a))
+
+        # Calculate the container width delta_x
+        
+        n_total = len(GenotypeSeed)
+        Delta_x = int(W / n_total)
+        
+        # Project thickness levels onto the Chromosome using the container width Delta_x and real thickness dictionary t_dict
+        
+        for containerNumber in range(1,n_total+1):
+
+            Thickness[(containerNumber-1)*Delta_x:(containerNumber)*Delta_x] = GenotypeSeed[containerNumber-1]
+        
+        Chromosome.Thickness = Thickness 
+        Chromosome.Width = Width
+        
+        print("Seed chromosome has been constructed...", GenotypeSeed)
+        
+        return Chromosome   
         
         
     def ConstructChromosomeRandom(n_total, delta_a, W, t_dict, Constraints): #previous construct_chromosome

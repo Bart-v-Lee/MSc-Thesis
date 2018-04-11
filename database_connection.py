@@ -10,6 +10,7 @@ Created on Fri Feb 16 15:39:57 2018
 import pandas as pd
 import sqlite3
 import json
+import numpy as np
 
 class Database:
     
@@ -85,9 +86,9 @@ class Database:
         cur =  conn.cursor()
         BoundaryConditions = pd.read_sql_query('SELECT * FROM Boundary_Conditions WHERE Experiment_ID = (?);', conn, params = (ExperimentNumberID,) ) 
         
-        """
-        Transform T_dict string into a dictionary and place back into the BoundaryConditions dataframe
-        """
+        
+        # Transform T_dict string into a dictionary and place back into the BoundaryConditions dataframe
+
         T_dict = json.loads(BoundaryConditions.T_dict[0])
         BoundaryConditions.at[0,'T_dict'] = T_dict
         
@@ -95,12 +96,22 @@ class Database:
         
         return BoundaryConditions
     
-    def RetrieveSeedShape(self, SeedNumber, delta_x, W):
+    def RetrieveSeedShape(SeedNumber):
         """
         Retrieves a seed shape from the database_thesis.db
         """
+        conn = sqlite3.connect('database_thesis.db')
+        cur = conn.cursor()
         
-        pass
+        GenotypeSeedDf = pd.read_sql_query('SELECT * FROM Seed_Designs WHERE id = (?);', conn, params = (SeedNumber,) )
+        
+        # Transform Genotype string into an array 
+        
+        GenotypeSeed = np.array(GenotypeSeedDf.Genotype[0].split(','))
+        
+        conn.close
+        
+        return GenotypeSeed
     
     
     def RetrieveFatigueDataframe():
