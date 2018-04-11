@@ -135,6 +135,18 @@ class FatigueCalculations:
 #        print("Individual ",i," has been evaluated")
             
         return FatigueLife, FatigueCalculations
+        
+    def ReturnFatigueLifeFractions(Chromosome, FatigueCalculations, NumberOfFractions, a_0, a_max):
+        
+        
+        FractionTotalWidth = a_max - a_0
+        FractionWidth = int(FractionTotalWidth / NumberOfFractions)
+        
+        N_life1 = np.sum(FatigueCalculations.dN[:FractionWidth])
+        N_life2 = np.sum(FatigueCalculations.dN[FractionWidth:(2*FractionWidth)])
+        N_life3 = np.sum(FatigueCalculations.dN[(2*FractionWidth):a_max])
+        
+        return N_life1, N_life2, N_life3
 
     """
     #==============================================================================
