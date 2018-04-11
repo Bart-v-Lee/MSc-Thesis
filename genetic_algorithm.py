@@ -51,7 +51,7 @@ class Population:
         Determine whether to import any seed design into the initial population. If True, then chooses a solution number within the population which will become the seed solution.
         """
 
-        if SeedSettings == True:
+        if SeedSettings == "True":
             IndividualNumberSeed = np.random.randint(1,N_pop+1)
         else:
             IndividualNumberSeed = None
@@ -65,12 +65,12 @@ class Population:
         for IndividualNumber in range(1,N_pop+1):
         
             if  IndividualNumber == IndividualNumberSeed:
-                PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber,delta_a,W,t_dict, Constraints)
+                PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber, delta_a, W)
         
             else:
                 PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeRandom(n_total,delta_a, W, t_dict, Constraints)
                 
-       
+        
         return PopulationInitial
         
         
@@ -197,7 +197,7 @@ class Population:
         return PopulationComposition
 
             
-    def StorePopulationData(PopulationDataframe,  Operation, Chromosome, Fitness, Pp, Parents):
+    def StorePopulationData(PopulationDataframe,  Operation, Chromosome, Fitness, Pp, Parents, FatigueCalculations):
         """
         This method stores new information in the PopulationComposition dictionary depending on the operation that has been performed.
         The PopulationComposition dictionary contains all information on each individual of each generation during a single run of the algorithm.
@@ -215,7 +215,7 @@ class Population:
             # Always add the first chromosome at the start of the initialization
             
             if len(PopulationDataframe) == 0:
-                    NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness]})
+                    NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness], 'FatigueCalculations':[{"FC":FatigueCalculations}]}) #added fatigue calculations
 #                    print(NewChromosome)
                     NewChromosome.Chromosome[0] = Chromosome
                     
@@ -245,7 +245,7 @@ class Population:
                 else:
                     # If it does not exist, add new chromosome with the respective fitness to the PopulationDataframe and provide it with unique ID
                     
-                    NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness]} )
+                    NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness], 'FatigueCalculations':[ {"FC":FatigueCalculations}]}) #added fatigue calculations
                     NewChromosome.Chromosome[0] = Chromosome
                     
                     PopulationDataframe = PopulationDataframe.append(NewChromosome, ignore_index = True)
@@ -264,7 +264,7 @@ class Population:
                 if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
                     
                     PopulationDataframe.loc[ChromosomeNumber,"Fitness"] = Fitness
-                    
+                    PopulationDataframe.loc[ChromosomeNumber,"FatigueCalculations"] = {"FC":FatigueCalculations}
                 else:
                     continue
 
@@ -658,7 +658,7 @@ class GeneticAlgorithm:
             pass
         
         
-        return FitnessValue
+        return FitnessValue, FatigueCalculations
         
         
         
@@ -724,10 +724,10 @@ class GeneticAlgorithm:
         Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness value amongst other solutions in the population.
         """
 
-            
+        
         PopulationCurrentSelected["Pp"] = (PopulationCurrentSelected.Fitness) / (sum(PopulationCurrentSelected.Fitness))
         PopulationCurrentSelected["Pp Cumulative"] = PopulationCurrentSelected["Pp"].cumsum()
-
+        
         return PopulationCurrentSelected
         
     def RelativeRank(PopulationCurrentSelected): #previously fitness_ranking_method
@@ -860,7 +860,7 @@ class GeneticAlgorithm:
 
 #                    Children = [Child1, Child2]
 #                    for Child in range(0,len(Children)):
-#                        main.PopulationComposition['Gen '+str(main.Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = main.PopulationComposition['Gen '+str(main.Generation)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [Parent1,Parent2])
+#                        main.PopulationComposition['Gen '+str(main.Generation)][0] = genetic_algorithm.Population.PopulationData(PopulationDataframe = main.PopulationComposition['Gen '+str(main.Generation)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [Parent1,Parent2])
 #
                     break
             
@@ -916,7 +916,7 @@ class GeneticAlgorithm:
             
             # Translate the crossover point to a point in the array of the chromosome calculating delta_x as the container width
             
-            Delta_x = ((0.5*W) / (0.5*n_total)) #0.5 because of the symmetry constraint
+            Delta_x = ((W) / (n_total)) 
             
             # Exchange the chromosomes between both parents
 

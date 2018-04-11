@@ -27,7 +27,7 @@ time_start = time.clock()
 #check the hard-coded EXPERIMENT ID in ShowTop3CrenellationPatterns method!
 
 ExperimentNumberID = 1 # can be used to select different sets of boundary conditions from the database
-np.random.seed(45)
+np.random.seed(45) #45 used standard
 
 
 """
@@ -57,6 +57,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
         
 #    Population = genetic_algorithm.Population(BC.N_pop[0]) #object initiated with its instance variables
     PopulationInitial = genetic_algorithm.Population.InitializePopulation(BC.n_total[0], BC.Delta_a[0], BC.W[0], BC.N_pop[0], BC.T_dict[0], BC.SeedSettings[0], BC.SeedNumber[0], CONSTRAINTS) 
+    
     PopulationOffspring = None #start out with an empty PopulationOffspring
     
     
@@ -76,15 +77,18 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             PopulationCurrent = database_connection.Database.RetrievePopulationDataframe(BC.N_pop[0])
             
             for IndividualNumber in range(1,int(BC.N_pop)+1):
-                PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationInitial.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
+                PopulationCurrent.Fitness[IndividualNumber], FatigueCalculations = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationInitial.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
                 
                 PopulationCurrent.Chromosome[IndividualNumber] = PopulationInitial.Chromosome[IndividualNumber]
                 
                 # For comparison at the end of the optimisation, the fitness values for the initial population are also stored 
                 PopulationInitial.Fitness[IndividualNumber] = PopulationCurrent.Fitness[IndividualNumber]
 
+                # Extract Genotypes of each individual in the initial population
+                PopulationInitial.Genotype[IndividualNumber] = genetic_algorithm.Population.ExtractGenotype(PopulationInitial.loc[IndividualNumber,"Chromosome"] , BC.Delta_a[0], BC.n_total[0], BC.W[0])
+                
                 # Store information into the PopulationComposition dictionary for current individual
-                PopulationComposition['Gen '+str(0)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(0)][0], Operation = "Initialization", Chromosome = PopulationInitial.Chromosome[IndividualNumber] , Fitness = PopulationInitial.Fitness[IndividualNumber], Pp = None, Parents = 0)
+                PopulationComposition['Gen '+str(0)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(0)][0], Operation = "Initialization", Chromosome = PopulationInitial.Chromosome[IndividualNumber] , Fitness = PopulationInitial.Fitness[IndividualNumber], Pp = None, Parents = 0, FatigueCalculations = FatigueCalculations)
                 
 #                for UniqueChromosome in range(0,len(PopulationComposition['Gen 0'][0])):
 #                    
@@ -96,12 +100,12 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             
             for IndividualNumber in range(1,int(BC.N_pop)+1):
                             
-                PopulationCurrent.Fitness[IndividualNumber] = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationOffspring.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
+                PopulationCurrent.Fitness[IndividualNumber], FatigueCalculations = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationOffspring.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
                 
                 PopulationCurrent.Chromosome[IndividualNumber] = PopulationOffspring.Chromosome[IndividualNumber]
                 
                 #Store information into the PopulationComposition dictionary
-                PopulationComposition['Gen '+str(Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)][0], Operation = "Evaluation", Chromosome = PopulationCurrent.Chromosome[IndividualNumber] , Fitness = PopulationCurrent.Fitness[IndividualNumber], Pp = None, Parents = 0)
+                PopulationComposition['Gen '+str(Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)][0], Operation = "Evaluation", Chromosome = PopulationCurrent.Chromosome[IndividualNumber] , Fitness = PopulationCurrent.Fitness[IndividualNumber], Pp = None, Parents = 0, FatigueCalculations = FatigueCalculations)
   
                 
         """
@@ -170,7 +174,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 
                 for IndividualNumber in range(1,len(PopulationParents)+1):
                 
-                    PopulationComposition['Gen '+str(Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)][0], Operation = "Selection", Chromosome = PopulationParents.loc[IndividualNumber,"Chromosome"] , Fitness = None, Pp = PopulationParents.loc[IndividualNumber, "Pp"], Parents = None)
+                    PopulationComposition['Gen '+str(Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)][0], Operation = "Selection", Chromosome = PopulationParents.loc[IndividualNumber,"Chromosome"] , Fitness = None, Pp = PopulationParents.loc[IndividualNumber, "Pp"], Parents = None,FatigueCalculations = 0)
     
                 
                 """
@@ -204,7 +208,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
 
                     Children = [Child1, Child2]
                     for Child in range(0,len(Children)):
-                        PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]])
+                        PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Crossover", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]],FatigueCalculations = 0)
     
                             
             # if Crossover is not enabled, the surviving population becomes the offspring population. Bart: The size still needs to increase with a size, depending on Rs!
@@ -216,7 +220,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
 
                 for IndividualNumber in range(1,len(PopulationOffspring)):
                     
-                    PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Elitism", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]])
+                    PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Elitism", Chromosome = Children[Child] , Fitness = 0, Pp = None, Parents = [PopulationParents.Chromosome[ParentSelected1],PopulationParents.Chromosome[ParentSelected2]],FatigueCalculations = 0)
                     
                 
             """
@@ -249,7 +253,7 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                     """
                     # Store the relations after mutating into the PopulationComposition dictionary
 
-                    PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Mutation", Chromosome = ChildChromosome, Fitness = 0, Pp = None, Parents = [ParentChromosome])
+                    PopulationComposition['Gen '+str(Generation+1)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation+1)][0], Operation = "Mutation", Chromosome = ChildChromosome, Fitness = 0, Pp = None, Parents = [ParentChromosome],FatigueCalculations = 0)
 
             
             """
