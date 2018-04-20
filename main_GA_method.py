@@ -162,7 +162,10 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             """
             Step 3. Select the fittest solutions
             """
-            PopulationCurrentSelected = genetic_algorithm.GeneticAlgorithm.SelectSurvivingPopulation(PopulationCurrent, BC.Rs[0])
+            if Generation == 0:
+                PopulationCurrentSelected = PopulationCurrent
+            else:
+                PopulationCurrentSelected = genetic_algorithm.GeneticAlgorithm.SelectSurvivingPopulation(PopulationCurrent, BC.Rs[0])
         
             if BC.Crossover[0] == str(True):
             

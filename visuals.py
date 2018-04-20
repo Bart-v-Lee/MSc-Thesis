@@ -46,7 +46,13 @@ class FatigueVisuals:
     def ShowFatigueOverview():
         """
         This method shows the Fatigue Calculations overview when a solution is provided
+        Instead of storing the FatigueCalculations from the GA calculations, this method re-evaluates the fatigue life by performing the calculation for the given Chromosome
         """
+        
+        
+        
+        
+        
         
         pass
         

@@ -215,7 +215,7 @@ class Population:
             # Always add the first chromosome at the start of the initialization
             
             if len(PopulationDataframe) == 0:
-                    NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness], 'FatigueCalculations':[{"FC":FatigueCalculations}]}) #added fatigue calculations
+                    NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness]}) #added fatigue calculations  'FatigueCalculations':[{"FC":FatigueCalculations}]
 #                    print(NewChromosome)
                     NewChromosome.Chromosome[0] = Chromosome
                     
@@ -245,7 +245,7 @@ class Population:
                 else:
                     # If it does not exist, add new chromosome with the respective fitness to the PopulationDataframe and provide it with unique ID
                     
-                    NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness], 'FatigueCalculations':[ {"FC":FatigueCalculations}]}) #added fatigue calculations
+                    NewChromosome = pd.DataFrame(data = {'Chromosome':None,'Fitness':[Fitness]}) #added fatigue calculations , 'FatigueCalculations':[ {"FC":FatigueCalculations}]
                     NewChromosome.Chromosome[0] = Chromosome
                     
                     PopulationDataframe = PopulationDataframe.append(NewChromosome, ignore_index = True)
@@ -264,7 +264,7 @@ class Population:
                 if np.array_equal(PopulationDataframe.Chromosome[ChromosomeNumber].Thickness,Chromosome.Thickness):
                     
                     PopulationDataframe.loc[ChromosomeNumber,"Fitness"] = Fitness
-                    PopulationDataframe.loc[ChromosomeNumber,"FatigueCalculations"] = {"FC":FatigueCalculations}
+                    #PopulationDataframe.loc[ChromosomeNumber,"FatigueCalculations"] = FatigueCalculations
                 else:
                     continue
 
@@ -860,15 +860,13 @@ class GeneticAlgorithm:
                 Child1, Child2 = genetic_algorithm.GeneticAlgorithm.CrossoverSinglePoint(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints)
                 
             elif CrossoverOperator == "Set 2":
-                # update this method, still old version
-                PopulationOffspring  = genetic_algorithm.uniform_cross_over()
+                Child1, Child2 = genetic_algorithm.GeneticAlgorithm.CrossoverTwoPoint(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints)
                 
             elif CrossoverOperator == "Set 3":
-                # update this method, still old version
-                PopulationOffspring  = genetic_algorithm.initialize_population()
+                Child1, Child2 = genetic_algorithm.GeneticAlgorithm.CrossoverUniform(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints)
                 
             elif CrossoverOperator == "Set 4":
-                # update this method, still old version
+                # update this method, still old version, could be CrossoverAddition
                 PopulationOffspring  = genetic_algorithm.redistribution()
                 
 
@@ -925,7 +923,7 @@ class GeneticAlgorithm:
     #==============================================================================
     """    
 
-    def CrossoverSinglePoint(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints): #previously single_point_crossover
+    def CrossoverSinglePoint(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints): 
         """
         This method recombines the chromosomes of two parent solutions using the principles of single point crossover
         """
@@ -999,9 +997,127 @@ class GeneticAlgorithm:
             
         return Child1, Child2
         
+    def CrossoverTwoPoint(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints):
+        """
+        This method recombines the two parents 
+        """
+        
+        
+        if Constraints.Plate_Symmetry[0] == str(True):    #only consider the first half of the containers for the crossover
+
+            """
+            Only considers half of the containers for crossover, as the plate has to be symmetric
+            """
+            # Choose the crossover point randomly
+            
+            NumberOfCrossoverPoints = int(0.5*n_total)-1
+            
+            CrossoverPoint1 = None
+            CrossoverPoint2 = None
+            
+            while CrossoverPoint1 == CrossoverPoint2 or CrossoverPoint2 < CrossoverPoint1:
+                CrossoverPoint1 = int(np.random.choice(NumberOfCrossoverPoints,1))+1
+                CrossoverPoint2 = int(np.random.choice(NumberOfCrossoverPoints,1))+1
+
+            HalfChromosome = int(0.5*W)
+            
+            # Translate the crossover point to a point in the array of the chromosome calculating delta_x as the container width
+            
+            Delta_x = ((W) / (n_total)) 
+            
+            # Exchange the chromosomes between both parents
+
+            Child1Left = Parent1.Thickness[:int(CrossoverPoint1*Delta_x)].append(Parent2.Thickness[int(CrossoverPoint1*Delta_x):int(CrossoverPoint2*Delta_x)], ignore_index = True).append( Parent1.Thickness[int(CrossoverPoint2*Delta_x):HalfChromosome], ignore_index= True)                # left side of Parent1, middle side of Parent2 and right side of Parent1
+            Child2Left = Parent2.Thickness[:int(CrossoverPoint1*Delta_x)].append(Parent1.Thickness[int(CrossoverPoint1*Delta_x):int(CrossoverPoint2*Delta_x)], ignore_index = True).append( Parent2.Thickness[int(CrossoverPoint2*Delta_x):HalfChromosome], ignore_index= True)               # left side of Parent2, middle side of Parent1 and right side of Parent2
+            
+            Child1Chromosome = np.append(Child1Left,np.flipud(Child1Left))
+            Child2Chromosome = np.append(Child2Left,np.flipud(Child2Left))
+            
+            import database_connection
+            Child1 = database_connection.Database.RetrieveChromosomeDataframe() #empty chromosome dataframes
+            Child2 = database_connection.Database.RetrieveChromosomeDataframe()
+            
+            # Place Children in Chromsome dataframes
+            
+            Child1.Thickness = Child1Chromosome
+            Child2.Thickness = Child2Chromosome
+            Width = np.linspace(1,W, W)
+            Child1.Width = Width
+            Child2.Width = Width
+            
+        else:
+            """
+            Considers all the crossoverpoints as the plate does not have to be symmetric
+            """
+            # Choose the crossover point randomly
+            
+            NumberOfCrossoverPoints = int(n_total)-1
+            CrossoverPoint1 = None
+            CrossoverPoint2 = None
+            
+            while CrossoverPoint1 == CrossoverPoint2 or CrossoverPoint2 < CrossoverPoint1:
+                CrossoverPoint1 = int(np.random.choice(NumberOfCrossoverPoints,1))+1
+                CrossoverPoint2 = int(np.random.choice(NumberOfCrossoverPoints,1))+1
+            
+            # Translate the crossover point to a point in the array of the chromosome calculating delta_x as the container width
+            
+            Delta_x = ((W) / (n_total)) 
+            
+            # Exchange the chromosomes between both parents
+
+            Child1Thickness = np.append(Parent1.Thickness[:int(CrossoverPoint1*Delta_x)], Parent2.Thickness[int(CrossoverPoint1*Delta_x):int(CrossoverPoint2*Delta_x)], Parent1.Thickness[int(CrossoverPoint2*Delta_x):])                # left side of Parent1, middle side of Parent2 and right side of Parent1
+            Child2Thickness = np.append(Parent2.Thickness[:int(CrossoverPoint1*Delta_x)], Parent1.Thickness[int(CrossoverPoint1*Delta_x):int(CrossoverPoint2*Delta_x)], Parent2.Thickness[int(CrossoverPoint2*Delta_x):])                # left side of Parent2, middle side of Parent1 and right side of Parent2
+            
+
+            import database_connection
+            Child1 = database_connection.Database.RetrieveChromosomeDataframe() #empty chromosome dataframes
+            Child2 = database_connection.Database.RetrieveChromosomeDataframe()
+            
+            # Place Children in Chromsome dataframes
+            
+            Child1.Thickness = Child1Thickness
+            Child2.Thickness = Child2Thickness
+            Width = np.linspace(1,W, W)
+            Child1.Width = Width
+            Child2.Width = Width
+            
+        return Child1, Child2
+
     
-    def CrossoverUniform(self):
-        pass
+    def CrossoverUniform(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints):
+        """
+        This method recombines the two parents 
+        """
+        
+        
+        if Constraints.Plate_Symmetry[0] == str(True):    #only consider the first half of the containers for the crossover
+
+            """
+            Only considers half of the containers for crossover, as the plate has to be symmetric
+            """
+            # Choose the crossover point randomly
+            
+            NumberOfCrossoverPoints = int(0.5*n_total)-1
+            CrossoverPoint = int(np.random.choice(NumberOfCrossoverPoints,1))+1
+            HalfChromosome = int(0.5*W)
+            
+            # Translate the crossover point to a point in the array of the chromosome calculating delta_x as the container width
+
+            
+        else:
+            """
+            Considers all the crossoverpoints as the plate does not have to be symmetric
+            """
+            # Choose the crossover point randomly
+            
+
+        
+        
+        
+        
+        
+        
+        return Child1, Child2
     
     def CrossoverAddition(self, bc, population_children, population_parents): #previously addition_crossover
         """
