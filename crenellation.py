@@ -29,6 +29,35 @@ class CrenellationPattern:
         self.W = W
         self.t_dict = t_dict
 
+    def ConstructChromosomeGenotype(Genotype, n_total, W, delta_a):
+        """
+        This method transforms a given genotype into a chromosome which is suitable for fatigue crack growth calculations
+        """
+        
+        import database_connection
+        Chromosome = database_connection.Database.RetrieveChromosomeDataframe()
+        
+        # add code to transform the genotype to the provided boundary conditions
+        
+        Width = np.linspace(1,W, W)
+        Thickness  = np.zeros(np.int(W/delta_a))
+
+        # Calculate the container width delta_x
+        
+        Delta_x = int(W / n_total)
+        
+        # Project thickness levels onto the Chromosome using the container width Delta_x and real thickness dictionary t_dict
+        
+        for containerNumber in range(1,n_total+1):
+
+            Thickness[(containerNumber-1)*Delta_x:(containerNumber)*Delta_x] = Genotype[containerNumber-1]
+        
+        Chromosome.Thickness = Thickness 
+        Chromosome.Width = Width
+        
+        
+        return Chromosome
+
 
     def ConstructChromosomeSeed(SeedNumber, delta_a, W): #previous use_seed
         """
@@ -627,20 +656,21 @@ class CrenellationPattern:
         ThicknessPatternTranspose = np.transpose(ThicknessPattern)  
 
         # evaluation of the integral
-                
+        
         """
         Evaluating the integral would usually take a long time, as it evaluates a large matrix for every crack increment delta_a.
         This can be explaining by the fact that for every increment, it recalculates the entire area in front of the crack.
         It could be done more efficiently by simply subtracting the area of the containers through which the crack has grown in a certain cycle delta_a
         However, the method below is also very fast for doing large matrix calculations
         """
+        
 #        print("start evaluating integral")
         import crenellation
         X = np.fromfunction(lambda i,j: crenellation.CrenellationPattern.CalculateIntegral(a[i],x[j],delta_a), (len(a),len(x)), dtype = 'int')
 #        print("area calculation done")        
 
         # Multiply the integral result with the thickness pattern defined by the crenellation pattern to get the area.
-        
+
         Area = X * ThicknessPatternTranspose
         Area = np.around(Area,decimals = 3)
         

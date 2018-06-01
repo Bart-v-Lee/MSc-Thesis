@@ -88,7 +88,8 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
 
                 # Extract Genotypes of each individual in the initial population
                 PopulationInitial.Genotype[IndividualNumber] = genetic_algorithm.Population.ExtractGenotype(PopulationInitial.loc[IndividualNumber,"Chromosome"] , BC.Delta_a[0], BC.n_total[0], BC.W[0])
-                
+                PopulationCurrent.Genotype[IndividualNumber] = genetic_algorithm.Population.ExtractGenotype(PopulationInitial.loc[IndividualNumber,"Chromosome"] , BC.Delta_a[0], BC.n_total[0], BC.W[0])
+
                 # Store information into the PopulationComposition dictionary for current individual
                 PopulationComposition['Gen '+str(0)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(0)][0], Operation = "Initialization", Chromosome = PopulationInitial.Chromosome[IndividualNumber] , Fitness = PopulationInitial.Fitness[IndividualNumber], Pp = None, Parents = 0, FatigueCalculations = FatigueCalculations)
                 
@@ -105,6 +106,8 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
                 PopulationCurrent.Fitness[IndividualNumber], FatigueCalculations = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],PopulationOffspring.Chromosome[IndividualNumber], BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0])
                 
                 PopulationCurrent.Chromosome[IndividualNumber] = PopulationOffspring.Chromosome[IndividualNumber]
+                PopulationCurrent.Genotype[IndividualNumber] = genetic_algorithm.Population.ExtractGenotype(PopulationCurrent.loc[IndividualNumber,"Chromosome"] , BC.Delta_a[0], BC.n_total[0], BC.W[0])
+
                 
                 #Store information into the PopulationComposition dictionary
                 PopulationComposition['Gen '+str(Generation)][0] = genetic_algorithm.Population.StorePopulationData(PopulationDataframe = PopulationComposition['Gen '+str(Generation)][0], Operation = "Evaluation", Chromosome = PopulationCurrent.Chromosome[IndividualNumber] , Fitness = PopulationCurrent.Fitness[IndividualNumber], Pp = None, Parents = 0, FatigueCalculations = FatigueCalculations)
@@ -137,7 +140,8 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             # Calculate and Store GeneComposition for the current generation
             
             PopulationComposition['Gen '+str(Generation)][1] = genetic_algorithm.Population.StoreGeneComposition(PopulationComposition['Gen '+str(Generation)][0], BC.T_dict[0], BC.n_total[0])
-          
+            PopulationComposition['Gen '+str(Generation)][2] = genetic_algorithm.Population.ConstructRelativeAlleleStrengthComposition(PopulationCurrent)
+
             
             # Create dataframe for final population, for easy reference
             PopulationFinal = PopulationCurrent
@@ -162,11 +166,12 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             """
             Step 3. Select the fittest solutions
             """
-            if Generation == 0:
+            if Generation == 0: # added this if loop to exclude the initial population from selection
                 PopulationCurrentSelected = PopulationCurrent
             else:
                 PopulationCurrentSelected = genetic_algorithm.GeneticAlgorithm.SelectSurvivingPopulation(PopulationCurrent, BC.Rs[0])
         
+            
             if BC.Crossover[0] == str(True):
             
                 """
@@ -278,7 +283,8 @@ for Run in range(1,int(BC.NumberOfRuns)+1):
             # Calculate and Store GeneComposition for the current generation  
             
             PopulationComposition['Gen '+str(Generation)][1] = genetic_algorithm.Population.StoreGeneComposition(PopulationComposition['Gen '+str(Generation)][0], BC.T_dict[0], BC.n_total[0])
-          
+            PopulationComposition['Gen '+str(Generation)][2] = genetic_algorithm.Population.ConstructRelativeAlleleStrengthComposition(PopulationCurrent)
+
             
     
     """
@@ -303,6 +309,10 @@ PopulationFinal = PopulationFinal.sort_values("Fitness", ascending= False, kind=
 # Show top 3 crenellation patterns in the Final Population
 
 visuals.FatigueVisuals.ShowTop3CrenellationPatterns(PopulationFinal, PopulationInitial)
+
+# Show Allele strength development over generations
+
+visuals.PopulationVisuals.ShowAlleleStrengthComposition(PopulationComposition, BC.NumberOfGenerations[0])
 
 # Show GeneComposition for intervals of generations
 

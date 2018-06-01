@@ -105,8 +105,13 @@ class Population:
             try:
                 for Operation in ParentRelations:
             
-                    OperationFrequency = len(ParentRelations[Operation])
+                    """
+                    Count the number of occurences in which the current genotype was produced after crossover. 
+                    """
+                    
+                    OperationFrequency = len(ParentRelations[Operation]) 
                     GeneFrequency += OperationFrequency
+                    
                     
                 # Add the current Gene to the GeneArray with the frequency 'GeneFrequency'
             
@@ -118,6 +123,7 @@ class Population:
                     
                     for Position in range(0,GeneArrayPosition+1):
                         GeneArray[Position,Gene] += GeneFrequency
+                        
             except:
                 continue
         
@@ -127,7 +133,72 @@ class Population:
         return GeneArray
         
         
+    def CalculateRelativeAlleleStrength(Gene,Allele,AlleleValue, PopulationCurrent):
+        """
+        This method returns a fraction representing the relative amount of fitness of individuals with a certain allele over the total amount of fitness of the entire population.
+        """
         
+        AlleleGeneFitness = 0
+        TotalFitnessPopulation = np.sum(PopulationCurrent.Fitness) 
+        
+        for Individual in range(1,len(PopulationCurrent.Individual_ID)+1):
+            
+            if PopulationCurrent.Genotype[Individual][Gene] >= AlleleValue:
+                
+                AlleleGeneFitness += PopulationCurrent.Fitness[Individual]
+            
+            
+        AlleleGeneStrength = np.around((AlleleGeneFitness / TotalFitnessPopulation),2)
+        
+        return AlleleGeneStrength
+        
+    
+    
+    def ConstructRelativeAlleleStrengthComposition(PopulationCurrent):
+        """
+        This method iterates through each possible allele for each gene and returns a matrix of relative strength of this allele in the given population
+        """
+        import database_connection
+        import genetic_algorithm
+        ExperimentNumberID = 1
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+        CONSTRAINTS = database_connection.Database.RetrieveConstraints(BC.Constraint_ID[0])
+
+        
+        T_dict = BC.T_dict[0]
+        
+        NumberOfContainers = int(BC.n_total[0])
+        NumberOfAlleles = len(T_dict)
+        FirstAllele = T_dict[str(0)]
+        
+        # Create empty matrix for the composition of Allele Strengths
+        
+
+        
+        if CONSTRAINTS.Plate_Symmetry[0] == "True":
+            
+            NumberOfContainers = int(BC.n_total[0] / 2)
+            AlleleStrengthComposition = np.zeros((NumberOfAlleles,NumberOfContainers))
+
+            for Gene in range(0,NumberOfContainers):
+                
+                
+                for Allele in range(0,NumberOfAlleles):
+                    
+                    AlleleValue = float(T_dict[str(Allele)])
+                    
+                    # Calculate relative Allele strength
+                    
+                    AlleleGeneStrength = genetic_algorithm.Population.CalculateRelativeAlleleStrength(Gene,Allele,AlleleValue, PopulationCurrent)
+                    
+                    # Place relative Allele strength in the AlleRelativeStrength Matrix
+            
+                    AlleleStrengthComposition[Allele,Gene] = AlleleGeneStrength
+        
+        AlleleStrengthComposition = np.flipud(AlleleStrengthComposition)
+
+        
+        return AlleleStrengthComposition
     
     def CalculatePopulationStatistics():
         """
@@ -150,13 +221,14 @@ class Population:
         import database_connection
                 
         PopulationGeneComposition = []
+        PopulationAlleleStrengthComposition = []
         # Create the dictionary
         PopulationComposition = {}
         
         for Generation in range(0,NumberOfGenerations):
             PopulationDataframe =  database_connection.Database.RetrievePopulationDataframe(N_pop = 0)
 
-            PopulationComposition['Gen '+str(Generation)] = [PopulationDataframe, PopulationGeneComposition]
+            PopulationComposition['Gen '+str(Generation)] = [PopulationDataframe, PopulationGeneComposition, PopulationAlleleStrengthComposition]
                                   
         return PopulationComposition
         
@@ -357,7 +429,9 @@ class Population:
                 NewChromosome = pd.DataFrame(data = Chromosome)
                 NewChromosomeDict = {'Chromosome':NewChromosome} 
                 PopulationDataframe = PopulationDataframe.append(NewChromosomeDict, ignore_index = True)
-                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Crossover":np.array([Parent1_ID,Parent2_ID])}
+                Empty = []
+                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"] = {"Crossover": Empty}
+                PopulationDataframe.loc[PopulationDataframe.index[-1],"Relations"]["Crossover"].append(np.array([Parent1_ID,Parent2_ID]))
                 
                 #the child solution has not been found before, evaluate its fitness such that it is stored in the PopulationComposition dataframe before the child is potentially mutated and the solution is lost
                 

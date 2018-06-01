@@ -31,6 +31,10 @@ class brute_force_method:
 
     def __init__(self,bc):
         self.bc = bc
+        
+        
+
+        
 
     def brute_force_method_simple(self,bc):
         population = []
