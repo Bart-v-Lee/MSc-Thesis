@@ -8,6 +8,12 @@ Created on Mon Sep 18 13:18:33 2017
 
 import matplotlib.pyplot as pp
 from matplotlib import rc
+from matplotlib.colors import ListedColormap
+
+from plotly import tools
+
+from plotly.offline import download_plotlyjs, init_notebook_mode, iplot
+from plotly.graph_objs import Heatmap
 
 import numpy as np
 import pandas as pd
@@ -103,10 +109,84 @@ class FatigueVisuals:
 class PopulationVisuals:
     
 
-    
-    def ShowPopulationComposition(PopulationDataframe):
+    def ShowAlleleStrengthComposition(PopulationComposition, NumberOfGenerations):
         """
-        This method shows the Gene composition for a single generation, as specified by the input
+        This method shows the strength of an allele in time (e.g. generations)
+        """
+        
+        # Import the boundary conditions and constraints
+
+        import database_connection
+        ExperimentNumberID = 1
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+        CONSTRAINTS = database_connection.Database.RetrieveConstraints(BC.Constraint_ID[0])
+        
+        #figure = pp.figure(figsize = (15,15))
+
+        # Determine the number of alleles and genes given the constraints and boundary conditions
+        
+        NumberOfAlleles = len(BC.T_dict[0])
+        if CONSTRAINTS.Plate_Symmetry[0] == "True":
+            NumberOfGenes = int(BC.n_total[0] / 2   )
+        else:
+            NumberOfGenes = BC.n_total[0]
+
+        #NumberOfBuildingBlocks = NumberOfGenes * NumberOfAlleles
+        #BuildingBlocks = ()
+        pp.figure(1, figsize = (15,15))
+        figure2, axes = pp.subplots(nrows=NumberOfAlleles-1, ncols=NumberOfGenes, figsize=(8,8))
+        
+        colors = ['#e6194b','#3cb44b','#ffe119','#0082c8','#f58231','#911eb4','#46f0f0','#f032e6','#d2f53c','#fabebe','#008080','#e6beff','#aa6e28','#000000','#800000']
+
+        # Iterate for each Allele, Gene combination and plot the Allele Strength for each generation 
+
+        BuildingBlockNumber = -1
+
+        for Gene in range(0,NumberOfGenes):
+        
+            for Allele in range(0,NumberOfAlleles):
+                if Allele == 0:
+                    continue
+                
+                AlleleArray = np.zeros((NumberOfAlleles, NumberOfGenes))
+                AlleleArray[NumberOfAlleles-1-Allele:3,Gene] = 1.0
+                BuildingBlockNumber += 1
+                #BuildingBlocks[str(Gene)+","+str(Allele)] = AlleleArray
+                
+                AlleleStrengthArray = []
+                AlleleStrengthInitial = PopulationComposition["Gen 0"][2][(NumberOfAlleles-1-Allele),Gene]
+                
+                for Generation in range(0,NumberOfGenerations):
+                    
+                    AlleleStrength = PopulationComposition["Gen "+str(Generation)][2][(NumberOfAlleles-1-Allele),Gene]
+                    AlleleStrengthArray = np.append(AlleleStrengthArray, AlleleStrength)
+                    
+                """
+                Print the Allele under consideration in both figures
+                """
+                pp.figure(1)
+                figure1  = pp.plot(AlleleStrengthArray, label = str([Gene,Allele,AlleleStrengthInitial]), color = colors[BuildingBlockNumber])
+                pp.legend()
+                
+                pp.figure(2)
+                color = colors[BuildingBlockNumber]
+                cmap = ListedColormap(['w',color])
+
+                axes[(NumberOfAlleles-1-Allele),Gene].imshow(AlleleArray, cmap=cmap)
+
+                pp.tight_layout()
+                
+
+        pp.figure(1)        
+        pp.xlabel("Generation Number")
+        pp.ylabel("Relative Fitness containing specific Allele")
+        pp.title("Allele Strength for each Generation")
+        
+    
+    
+    def ShowPopulationSolutions(PopulationDataframe):
+        """
+        This method shows the different individuals present for a single generation, as specified by the input
         """
 
         
@@ -117,43 +197,53 @@ class PopulationVisuals:
         
 
     
-        
-        
-        
-        
-        
-    
-    def ShowInitialPopulationDiversity(PopulationInitial):
-        """
-        This method shows the features present in the initial population 
-        """
-        
-        pass
-    
-    
 
-        
-        
-        
     
     def ShowPopulationConvergence(PopulationComposition, NumberOfGenerations):
         """
-        This method visualizes the stored information of the dictionary population composition along the generations, for 0%, 50% and 100% progression of generations
+        This method visualizes the allele composition of the dictionary PopulationComposition along the generations, for 0%, 50% and 100% progression of generations
         """
         
         HalfGenerations = int(NumberOfGenerations / 2)
+        NumberOfImages = 3
+        
+        # Gather Allele Compositions
+        
+        AlleleComposition = {}
+        AlleleComposition[0] = PopulationComposition["Gen 0"][1] 
+        AlleleComposition[1] = PopulationComposition["Gen "+str(HalfGenerations)][1]
+        AlleleComposition[2] = PopulationComposition["Gen "+str(NumberOfGenerations)][1]
+        
+        # Plot Allele Compositions
         
         
+        fig, ((ax1), (ax2), (ax3)) = pp.subplots(1, 3, figsize = (20,20))
         
-        
-        
-        
-    
-    
-        pass
+        axes = {}
+        axes[0] = ax1
+        axes[1] = ax2 
+        axes[2] = ax3
 
+        
+        image1 = ax1.imshow(AlleleComposition[0], cmap = 'Greens', vmin = 0) 
+        image2 = ax2.imshow(AlleleComposition[1], cmap = 'Greens', vmin = 0) 
+        image3 = ax3.imshow(AlleleComposition[2], cmap = 'Greens', vmin = 0) 
     
-    
+        for image in range(0,3):
+            
+            ax = axes[image]
+            NumberOfGenerationsPlot = round((NumberOfGenerations / NumberOfImages)* (image+1) * (1/NumberOfGenerations) *100,0)
+            ax.set_title(str(NumberOfGenerationsPlot)+" % of Generations")
+
+            
+            for allele in range(0,AlleleComposition[0].shape[0]):
+                
+                for gene in range(0,AlleleComposition[0].shape[1]):
+                    
+                    text = ax.text(gene,allele,AlleleComposition[image][allele,gene], ha= "center",va = "center",color = "w")
+
+
+
     
     
     def create_plot(population_eval, bc,m2, individual_no):

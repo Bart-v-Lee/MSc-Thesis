@@ -20,6 +20,23 @@ class Database:
 
         pass
         
+    def RetrieveProblemClassVariables(ClassID):
+        
+        
+        conn = sqlite3.connect("database_thesis.db")
+        cur = conn.cursor()
+        
+        ProblemClassVariables = pd.read_sql_query("SELECT * FROM ProblemClasses WHERE ClassID = (?)", conn, params = (str(ClassID),) )
+
+        
+        # Transform T_dict string into a dictionary and place back into the BoundaryConditions dataframe
+
+        tDictionary = json.loads(ProblemClassVariables.tDictionary[0])
+        ProblemClassVariables.at[0,'tDictionary'] = tDictionary
+        conn.close
+    
+        return ProblemClassVariables
+    
     def RetrieveMaterial(Material_ID):
         """
         Retrieves the Material constants for a chosen Material ID

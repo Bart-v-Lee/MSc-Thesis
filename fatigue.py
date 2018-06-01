@@ -17,14 +17,48 @@ class FatigueCalculations:
         pass
     
     
-    def CalculateChromosomeArea():
+    def CalculateGenotypeFitness():
         """
-        Calculates the total area of a given chromosome
+        Calculates the fitness of a given genotype by the user
         """
+        import database_connection
+        ExperimentNumberID = 1
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+        MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
+        CONSTRAINTS = database_connection.Database.RetrieveConstraints(BC.Constraint_ID[0])
         
+        import crenellation
+        import genetic_algorithm
         
-        pass
-    
+        if CONSTRAINTS.Plate_Symmetry[0] == "True":
+            Genotype1 = input("Please enter the half length, first Genotype (use comma as delimiter): ")
+            Genotype1 = [float(Allele) for Allele in Genotype1.split(",")]
+            Genotype1 = np.append(Genotype1, np.flipud(Genotype1))
+            
+            Genotype2 = input("Please enter the half length, second Genotype (use comma as delimiter, fill in 1 for None): ")
+            Genotype2 = [float(Allele) for Allele in Genotype2.split(",")]
+            Genotype2 = np.append(Genotype2, np.flipud(Genotype2))
+
+
+        else:
+            Genotype1 = input("Please enter the full length, first Genotype (use comma as delimiter): ")
+            Genotype1 = [float(Allele) for Allele in Genotype1.split(",")]
+            
+            Genotype2 = input("Please enter the full length, second Genotype (use comma as delimiter, fill in 1 for None): ")
+            Genotype2 = [float(Allele) for Allele in Genotype2.split(",")]
+
+        if Genotype2 == [1.0,1.0]:
+            Fitness2 = None
+            pass
+        else:
+            Chromosome2 = crenellation.CrenellationPattern.ConstructChromosomeGenotype(Genotype2, BC.n_total[0], BC.W[0], BC.Delta_a[0])
+            Fitness2, FatigueCalculations2 = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],Chromosome2, BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0], MAT.C[0], MAT.m[0])
+
+        Chromosome1 = crenellation.CrenellationPattern.ConstructChromosomeGenotype(Genotype1, BC.n_total[0], BC.W[0], BC.Delta_a[0])
+        
+        Fitness1, FatigueCalculations1 = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],Chromosome1, BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0], MAT.C[0], MAT.m[0])
+        
+        return Fitness1, Fitness2
     
     def CalculateFatigueLife(Chromosome, S_max, a_0, a_max, delta_a, C, m): #previously fatigue_calculations
         """
@@ -37,10 +71,14 @@ class FatigueCalculations:
         total_a = a_max - a_0
 
         
-        # Import empty dataframe to store the Fatigue Calcutions for the current solution
+        # Import empty dataframe and BC to store the Fatigue Calcutions for the current solution
         
         import database_connection  
         FatigueCalculations = database_connection.Database.RetrieveFatigueDataframe()
+        
+        import database_connection
+        ExperimentNumberID = 1
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
         
 #        FatigueCalculations = pd.DataFrame(data= None, columns = ("Width","a","N","dadN","K","Sigma_eff","Area","dN","Sigma_iso","Beta"))
         
@@ -83,6 +121,14 @@ class FatigueCalculations:
         Evaluate the Stress Intensity Factor K
         """
         FatigueCalculations.K = FatigueCalculations.Sigma_eff * np.sqrt(np.pi*a_meters) 
+        
+        if BC.BrokenStiffenerEffect[0] == 'True':
+            
+            print('BS worked')
+            # 
+            for x in range(1,len(FatigueCalculations.index)):
+                FatigueCalculations.dK_BS[x] = FatigueCalculations['K'][x] + FatigueCalculations['K'][x-1]
+        
         
         """
         Calculate the crack growth rate used the Paris relation
