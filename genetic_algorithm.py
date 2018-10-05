@@ -23,10 +23,6 @@ class Population:
         Statistics = a collection of statistics describing the population, such a fitess mean, std devation, max fitness, min fitness
     
     """
-    
-    def __init__(self, N_pop): #object or instance variables 
-
-        self.N_pop = N_pop
 
     def InitializePopulation(n_total, delta_a, W, N_pop, t_dict, SeedSettings, SeedNumber, Constraints): #previous initialize_population
         """
@@ -34,31 +30,145 @@ class Population:
         pre-designed solutions are scaled to the given boundary conditions (delta_x, W) and inserted in the initial population. The remaining individuals are sampled randomly from
         the solution space. 
         """
+<<<<<<< HEAD
+        import crenellation
+        import genetic_algorithm
+        import database_connection
+        
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+=======
         
 #        pop_size = int(bc.ix["Population size"])
 #        array = np.zeros((pop_size,7))
 #        index = range(1,pop_size+1)
 #        list = {"Original Indi. No","Fitness", "Chromosome", "Cren Design", "Balance", "Lower Bound", "Upper Bound"}
 #        population_matrix = pd.DataFrame(data=array, index = index, columns = list, dtype = 'object')
+>>>>>>> parent of b76d0c9... Update 3.0
         
         """
         Import empty population dataframe
         """
-        import database_connection
         PopulationInitial = database_connection.Database.RetrievePopulationDataframe(N_pop)
 
         """
         Determine whether to import any seed design into the initial population. If True, then chooses a solution number within the population which will become the seed solution.
         """
+<<<<<<< HEAD
+        
+        if SeedSettings == "True":
+            individualNumberSeeds = list(range(alleleMinimum))
+            individualNumberSeeds = [x+1 for x in individualNumberSeeds]
+
+=======
 
         if SeedSettings == "True":
             IndividualNumberSeed = np.random.randint(1,N_pop+1)
+>>>>>>> parent of b76d0c9... Update 3.0
         else:
             IndividualNumberSeed = None
             
         """
         Fill the initial population with solutions 
         """
+<<<<<<< HEAD
+        if BC.InitializationOperator[0] == "RD-I":
+            """
+            If RD-I is enabled, continue random sampling until each allele is present at least once!
+            """
+            alleleFrequencies = np.zeros((len(t_dict),int(n_total/2)))
+
+            while 0 in np.unique(alleleFrequencies): #
+             
+                for IndividualNumber in range(1,N_pop+1):
+                
+                    if  IndividualNumber in individualNumberSeeds:
+                        PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber, delta_a, W)
+                        PopulationInitial.Genotype[IndividualNumber] =  genetic_algorithm.Population.ExtractGenotype(PopulationInitial.Chromosome[IndividualNumber],delta_a, n_total, W)
+                        continue
+                    
+                    GenotypeRandom = None
+                    
+                     # ensure that no genotype is equal, therefore increasing the chance that all alleles are present at least once.
+                   
+                    GenotypeRandomPresent = True
+                    
+                    while GenotypeRandomPresent == True:
+                                            
+                        ChromosomeRandom =  crenellation.CrenellationPattern.ConstructChromosomeRandom(n_total,delta_a, W, t_dict, Constraints)
+                        GenotypeRandom =  genetic_algorithm.Population.ExtractGenotype(ChromosomeRandom,delta_a, n_total, W)
+                        
+                        GenotypeRandomPresent = False
+                        
+                        for genotype in range(1,len(PopulationInitial)+1):
+
+                            Genotype = PopulationInitial.Genotype[genotype]
+                            
+                            if np.array_equal(Genotype,GenotypeRandom):
+                                GenotypeRandomPresent = True
+                            else:
+                                pass
+        
+                    PopulationInitial.Chromosome[IndividualNumber] = ChromosomeRandom
+                    PopulationInitial.Genotype[IndividualNumber] =  GenotypeRandom
+                    
+                alleleFrequencies = genetic_algorithm.Population.CalculateAlleleFrequenciesFromGenotype(PopulationInitial.reset_index(), BC.T_dict[0], BC.n_total[0])
+                
+
+
+
+        else:
+            
+            for IndividualNumber in range(1,N_pop+1):
+                
+                if  IndividualNumber in individualNumberSeeds:
+                    PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber, delta_a, W)
+                    PopulationInitial.Genotype[IndividualNumber] =  genetic_algorithm.Population.ExtractGenotype(PopulationInitial.Chromosome[IndividualNumber],delta_a, n_total, W)
+                else:
+                    PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeRandom(n_total,delta_a, W, t_dict, Constraints)
+                    PopulationInitial.Genotype[IndividualNumber] =  genetic_algorithm.Population.ExtractGenotype(PopulationInitial.Chromosome[IndividualNumber],delta_a, n_total, W)
+
+                
+
+
+
+        return PopulationInitial
+                
+    
+    def CalculateAlleleFrequenciesFromGenotype(PopulationDataframe, t_dict, n_total):
+        
+        AlleleArray = np.zeros((len(t_dict),int(n_total/2)))
+        ThicknessArray = np.sort(list(t_dict.values()), axis=None)
+        
+                
+        # Create dictionary to lookup the thickness step based on a thickness value in mm
+        
+        InverseThicknessDict = {}
+        
+        for Thickness in range(0,len(ThicknessArray)):
+            
+            InverseThicknessDict[ThicknessArray[Thickness]] = Thickness
+        
+        # For every Gene, calculate the frequency in the population and add it to the GeneArray
+
+        Genotypes = PopulationDataframe.Genotype
+
+        for Genotype in range(0,len(Genotypes)):
+            
+            for Gene in range(0,int(len(Genotypes[Genotype])/2)):
+        
+                AlleleValue = str(Genotypes[Genotype][Gene])
+                GeneArrayPosition = InverseThicknessDict[AlleleValue]
+                    
+                for Position in range(0,GeneArrayPosition+1):
+                    AlleleArray[Position,Gene] += 1
+                
+        AlleleArray = np.flipud(AlleleArray)
+
+        return AlleleArray
+    
+    
+    def CalculateAlleleFrequenciesFromRelations(PopulationDataframe, t_dict, n_total):
+=======
             
         import crenellation
         
@@ -75,8 +185,9 @@ class Population:
         
         
     def StoreGeneComposition(PopulationDataframe, t_dict, n_total):
+>>>>>>> parent of b76d0c9... Update 3.0
         """
-        This method creates an empty array and counts the frequency with which each gene value is present in the population at a certain generation.
+        This method creates an empty array and counts the frequency with which each allele is present in the population at a certain generation.
         """
 #        print(PopulationDataframe)
 
@@ -212,6 +323,50 @@ class Population:
         """
         pass
    
+    
+    def CalculateTournamentReproductionRates(PopulationCurrent, T):
+        """
+        This method calculates the reproduction rate for tournament selection (T-S)
+        """
+        
+        Fitnesses = np.sort(np.array(PopulationCurrent.Fitness), kind = 'quicksort')
+        CumFitnessNumbers = np.arange(1,len(Fitnesses)+1) # number of solutions with current fitness or worse
+        
+        N = len(PopulationCurrent)
+        
+        # equation from Blickle1995 paper. Frequency s(f_i) is always taken as 1, since no fitness values are expected to be equal.
+        
+        for fitness in range(1,len(Fitnesses)+1):
+            
+            reproductionRate = N * (   ((CumFitness[fitness] / N)**T)-( (CumFitness[fitness-1] / N)**T)  )
+            
+            print(reproductionRate)
+            
+            # place Rt back into PopulationComposition at the solution who has the given fitness value
+    
+        """
+        Still have to finish this method
+        """
+        print("Method not finished! Reproduction Rate SUS")
+    
+        return PopulationCurrent
+    
+    def CalculateProportionateReproductionRates(PopulationCurrent):
+        """
+        This method calculates the reproduction rate for tournament selection (T-S)
+        """
+        
+        Fitnesses = np.array(PopulationCurrent.Fitness)
+        CumFitness = Fitnesses.cumsum()
+        
+        N = len(PopulationCurrent)
+        
+        PopulationCurrent.Rt = 1
+        
+        print("method not finished! Reproduction Rate SUS")
+    
+        return PopulationCurrent
+    
     
     def CreatePopulationCompositionDictionary(NumberOfGenerations):
         """
@@ -655,15 +810,10 @@ class GeneticAlgorithm:
         2. Mutation rate Pm
         3. Selection rate Rs
     """
-
-    def __init__(self, Pc, Pm, Rs):
-        self.Pc = Pc
-        self.Pm = Pm
-        self.Rs = Rs
         
     """           
     #==============================================================================
-    #     Step 2. Evaluate the fitness function
+    #     Evaluation functions
     #==============================================================================
     """         
         
@@ -717,7 +867,7 @@ class GeneticAlgorithm:
             
             FitnessValue = FatigueLife / (Area**m)
             
-#            
+           
 #        elif Fitness_Function_ID == "Set 4":
 #            """
 #            Objective function F = x1 * N_life,1 + x2 * N_life,2 + x3 * N_life,3
@@ -740,43 +890,132 @@ class GeneticAlgorithm:
 #
 #            FitnessValue = FatigueLife / (Area**m)
 
-            
                     
         elif Fitness_Function_ID == "Set 5":
             """
             Objective function F = A^m / N_life
             """
             import crenellation
+<<<<<<< HEAD
+            FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m, BC)
+=======
             FatigueLife, FatigueCalculations = fatigue.FatigueCalculations.CalculateFatigueLife(Chromosome, S_max, a_0, a_max, Delta_a, C, m)
 #            print(FatigueCalculations)
+>>>>>>> parent of b76d0c9... Update 3.0
 
             Area = crenellation.CrenellationPattern.CalculatePlateArea(Chromosome.Thickness,Delta_a)
             
             FitnessValue = (Area**m) / FatigueLife
         
-            
-            
         else:
             pass
         
         
         return FitnessValue, FatigueCalculations
         
-        
-        
+            
     """           
     #==============================================================================
-    #     Step 3. Select the fittest solutions
+    #     Selection heuristics
     #==============================================================================
-    """     
+    """
+    
+    def SelectReproducingParents(PopulationCurrent, SelectionMethod, BC):
+        """
+        Choose selection method of parents based on heuristic provided in the boundary conditions BC
+        """
+        
+        import genetic_algorithm
+    
+        if SelectionMethod == 'LR-S': # Linear rank selection # not developed yet
+            Parent1, Parent2 = genetic_algorithm.GeneticAlgorithm.LinearRankSelection(PopulationCurrent)
+            
+        elif SelectionMethod == 'EXR-S':# Exponential rank selection, not developed yet 
+            Parent1, Parent2 = genetic_algorithm.GeneticAlgorithm.ExponentialRankSelection()
+            
+        elif SelectionMethod == 'FP-S': #Fitness Proportionate Selection 
+            Parent1, Parent2 = genetic_algorithm.GeneticAlgorithm.RelativeFitness(PopulationCurrent)
+
+        elif SelectionMethod == 'T-S': # Tournament selection
+            Parent1, Parent2 = genetic_algorithm.GeneticAlgorithm.TournamentSelection(PopulationCurrent, BC)
+            
+        elif SelectionMethod == 'SU-S':# Stochastic universal sampling, not developed yet 
+            Parent1, Parent2 = genetic_algorithm.GeneticAlgorithm.StochasticUniversalSampling(PopulationCurrent)
+            
+        elif SelectionMethod == 'RW-S':#not developed yet 
+            Parent1, Parent2 = genetic_algorithm.GeneticAlgorithm.test()
+        
+        elif SelectionMethod == 'TR-S':#not developed yet 
+            Parent1, Parent2 = genetic_algorithm.GeneticAlgorithm.test()
+            
+            
+        return Parent1, Parent2
+    
+            
+    def TournamentSelection(PopulationCurrent, BC):
+        """
+        This method returns 2 parents based on tournament selection
+        """
+        
+        N = len(PopulationCurrent)
+        T = BC.TS[0]
+        
+        TournamentSize = int(np.ceil(N * T))
+        
+        Parents = [None, None]
+        
+        while Parents[0] == Parents[1]:
+        
+            for parent in range(0,2):
+                
+                Samples = []
+                
+                for solution in range(0,TournamentSize):
+                    
+                    Sample = np.random.randint(1,N+1)
+                    
+                    Samples.append(Sample)
+                    
+                Fitnesses = []
+                
+                for Sample in Samples:
+                    
+                    Fitness = PopulationCurrent.Fitness[Sample]
+                
+                    Fitnesses.append(Fitness)
+        
+                highestFitness = np.argmax(Fitnesses)
+                
+                highestFitnessSample = Samples[highestFitness]
+                
+                Parents[parent] = highestFitnessSample        
+        
+        Parent1 = Parents[0]
+        Parent2 = Parents[1]
+        
+        return Parent1, Parent2
+   
+
+    def StochasticUniversalSampling(PopulationCurrent):
+        
+        # calculate the fitness distribution
         
         
+        
+        # calculate the reproduction rate
+        
+        pass
+        
+        # calculate SUS
+        
+        
+        return Parent1, Parent2
+    
+    
+    
     def SelectSurvivingPopulation(PopulationCurrent, Rs):
         """
         Selects the highest scoring solutions based on fitness. The number of solutions selected is determined by the population size N_pop and the selection rate Rs.
-        """
-        """
-        Equation: 
         """
 
         # Step 1. Rank individuals based on fitness values
@@ -790,6 +1029,8 @@ class GeneticAlgorithm:
         PopulationCurrentSelected.index = PopulationCurrentSelected.index +1
         
         return PopulationCurrentSelected
+<<<<<<< HEAD
+=======
         
             
     """           
@@ -820,8 +1061,9 @@ class GeneticAlgorithm:
             
         return SelectionProbParents
 
+>>>>>>> parent of b76d0c9... Update 3.0
 
-    def RelativeFitness(PopulationCurrentSelected): 
+    def RelativeFitnessSelection(PopulationCurrentSelected): 
         """
         Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness value amongst other solutions in the population.
         """
@@ -832,7 +1074,7 @@ class GeneticAlgorithm:
         
         return PopulationCurrentSelected
         
-    def RelativeRank(PopulationCurrentSelected): #previously fitness_ranking_method
+    def LinearRankSelection(PopulationCurrentSelected): #previously fitness_ranking_method
         """
         Output: Probability Distribution for Selection of a specific Solution as a Parent, based on its relative fitness rank amongst other solutions in the population.
         """
@@ -868,10 +1110,7 @@ class GeneticAlgorithm:
         
         return population_selected
         
-        
-    def Tournament():
-        pass
-   
+
     """
     #==============================================================================
     #           5. Select the Parents for Recombination
@@ -938,6 +1177,10 @@ class GeneticAlgorithm:
                 
             elif CrossoverOperator == "Set 3":
                 Child1, Child2 = genetic_algorithm.GeneticAlgorithm.CrossoverUniform(Parent1, Parent2, PopulationOffspring, W, n_total, Constraints)
+<<<<<<< HEAD
+
+                            
+=======
                 
             elif CrossoverOperator == "Set 4":
                 # update this method, still old version, could be CrossoverAddition
@@ -945,6 +1188,7 @@ class GeneticAlgorithm:
                 
 
             
+>>>>>>> parent of b76d0c9... Update 3.0
             #insert both children into the OffspringPopulation
             
             for i in range(1,len(PopulationOffspring)):
@@ -1762,3 +2006,80 @@ class GeneticAlgorithm:
 #            
         return population_children
         
+    def InitializePopulation_BACKUP(n_total, delta_a, W, N_pop, t_dict, SeedSettings, SeedNumber, Constraints, ExperimentNumberID): #previous initialize_population
+        """
+        Initializes a population of individuals of size N_pop, either through random or by pre-determined choice (e.g. a seed design). Depending on the SeedSettings, a number of 
+        pre-designed solutions are scaled to the given boundary conditions (delta_x, W) and inserted in the initial population. The remaining individuals are sampled randomly from
+        the solution space. 
+        """
+        
+#        pop_size = int(bc.ix["Population size"])
+#        array = np.zeros((pop_size,7))
+#        index = range(1,pop_size+1)
+#        list = {"Original Indi. No","Fitness", "Chromosome", "Cren Design", "Balance", "Lower Bound", "Upper Bound"}
+#        population_matrix = pd.DataFrame(data=array, index = index, columns = list, dtype = 'object')
+        import database_connection
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+        
+        
+
+        """
+        Import empty population dataframe
+        """
+        import database_connection
+        PopulationInitial = database_connection.Database.RetrievePopulationDataframe(N_pop)
+
+        """
+        Determine whether to import any seed design into the initial population. If True, then chooses a solution number within the population which will become the seed solution.
+        """
+        
+        
+        if SeedSettings == "True":
+            individualNumberSeeds = list(range(alleleMinimum))
+            individualNumberSeeds = [x+1 for x in individualNumberSeeds]
+
+                
+        else:
+            individualNumberSeeds = []
+            
+            
+        """
+        Fill the initial population with solutions 
+        """
+        InitialSamplingTermination = False
+            
+        import crenellation
+        import genetic_algorithm
+        
+        while InitialSamplingTermination == False:
+        
+            for IndividualNumber in range(1,N_pop+1):
+            
+                if  IndividualNumber in individualNumberSeeds:
+                    PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeSeed(SeedNumber, delta_a, W)
+                    PopulationInitial.Genotype[IndividualNumber] =  genetic_algorithm.Population.ExtractGenotype(PopulationInitial.Chromosome[IndividualNumber],delta_a, n_total, W)
+                else:
+                    PopulationInitial.Chromosome[IndividualNumber] = crenellation.CrenellationPattern.ConstructChromosomeRandom(n_total,delta_a, W, t_dict, Constraints)
+                    PopulationInitial.Genotype[IndividualNumber] =  genetic_algorithm.Population.ExtractGenotype(PopulationInitial.Chromosome[IndividualNumber],delta_a, n_total, W)
+
+            """
+            If RD-I is enabled, continue random sampling until each allele is present at least once!
+            """
+            if BC.InitializationOperator[0] == "RD-I":
+                
+                x = 1
+            
+                # check if each allele is present
+                
+                if equal:
+                    pass
+                
+                else:
+                    InitialSamplingTermination = True
+                
+            else:
+                InitialSamplingTermination = True
+
+
+
+        return PopulationInitial

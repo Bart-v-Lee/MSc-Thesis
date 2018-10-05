@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Aug 25 13:18:25 2018
+
+@author: bart
+"""
+
+import numpy as np
+import ast
+
+"""
+This script is intented for determining the neutral alleles for a given objective function and problem size.
+"""
+
+
+ExperimentNumberID = 106  # can be used to select different experiments used for determining the neutral alleles of a given problem size and objective function
+print("Experiment Number "+str(ExperimentNumberID)+" has been started")
+
+
+"""
+Step 1. Collect all boundary conditions and material constants for the experiment chosen
+"""
+
+import database_connection
+BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
+CONSTRAINTS = database_connection.Database.RetrieveConstraints(BC.Constraint_ID[0])
+
+"""
+Step 2. Build empty allele rative strength array
+"""
+
+#AlleleRelativeStrengthArray = np.zeros((len(BC.T_dict[0]),int(BC.n_total[0]/2))) 
+
+AlleleRelativeStrengthDict = {}
+
+for Generation in range(0,int(BC.NumberOfGenerations[0])): 
+    AlleleRelativeStrengthDict["Gen "+str(Generation)] = {}
+
+"""
+Step 3. Loop through the givens population sizes and run it several times
+"""
+
+PopulationSizes = ast.literal_eval(BC.N_pop[0])
+
+import main_script 
+
+counter = 0
+
+for PopulationSize in PopulationSizes:
+    
+    BC.N_pop[0] = PopulationSize
+
+    for Run in range(1,int(BC.NumberOfRuns)+1):     
+    
+        counter += 1
+        
+        print("The algorithm has started run number "+str(Run))
+    
+        PopulationComposition, topPatterns, AlleleStrength, PopulationFinal = main_script.MainProgramme.RunGeneticAlgorithm(ExperimentNumberID,BC,MAT,CONSTRAINTS)
+    
+        print("The algorithm has completed run number "+str(Run)+" with population size N="+str(PopulationSize))
+
+        # add the allele relative strength array for each generation of the current run to the inter-experimental allele relative strength dictionary
+        
+        for Generation in range(0,int(BC.NumberOfGenerations[0])): 
+            
+            AlleleRelativeStrengthCurrent = PopulationComposition["Gen "+str(Generation)][2]
+            
+            AlleleRelativeStrengthDict["Gen "+str(Generation)]["Run "+str(counter)] = AlleleRelativeStrengthCurrent
+
+
+# calculate the average allele strength by concatenating all relative allele strenght array for each run on every generation
+
+for Generation in range(0,int(BC.NumberOfGenerations[0])): 
+     
+    AlleleRelativeStrengthArray = np.zeros((len(BC.T_dict[0]),int(BC.n_total[0]/2))) 
+    
+    for gene in range(0,int(BC.n_total[0]/2)):
+        
+        for allele in range(0,len(BC.T_dict[0])):
+            
+            RelativeStrengthValues = []
+            
+            for Run in range(1,len(AlleleRelativeStrengthDict["Gen 0"])):
+        
+                RelativeStrengthValues.append(np.flipud(AlleleRelativeStrengthDict["Gen "+str(Generation)]["Run "+str(Run)])[allele][gene])
+        
+            AlleleRelativeStrengthArray[len(BC.T_dict[0])-1-allele][gene]  = np.average(RelativeStrengthValues)
+        
+    AlleleRelativeStrengthDict["Gen "+str(Generation)]["Average"] = AlleleRelativeStrengthArray
+                    
+
+
+"""
+Step 4. Store the obtained experimental data for later reference
+"""
+
+import pickle
+
+with open('NeutralAlleleDictionaryComplete.pickle','rb') as handle: NeutralAlleleDictionaryComplete = pickle.load(handle)
+
+NeutralAlleleDictionaryComplete["Ex_"+str(ExperimentNumberID)] = AlleleRelativeStrengthDict
+
+with open('NeutralAlleleDictionaryComplete.pickle','wb') as handle: pickle.dump(NeutralAlleleDictionaryComplete, handle, protocol = pickle.HIGHEST_PROTOCOL)
+
+
+print("Experiment Number "+str(ExperimentNumberID)+" has completed")
+
+
+
+

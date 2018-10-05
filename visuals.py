@@ -11,6 +11,16 @@ from matplotlib import rc
 from matplotlib.colors import ListedColormap
 
 from plotly import tools
+<<<<<<< HEAD
+import plotly.plotly as py
+from mpl_toolkits import mplot3d
+#from plotly.graph_objs import go
+
+from sklearn.preprocessing import normalize
+
+import math
+=======
+>>>>>>> parent of b76d0c9... Update 3.0
 
 from plotly.offline import download_plotlyjs, init_notebook_mode, iplot
 from plotly.graph_objs import Heatmap
@@ -38,6 +48,100 @@ Huber_cren_prediction =  ref_data.parse('Huber (2009) prediction')
 #Uz_uniform_left = ref_data.parse('Uz (2008) uniform left')
 Uz_uniform_right = ref_data.parse('Uz (2008) uniform right')
 
+<<<<<<< HEAD
+class FatigueCrackGrowthVisuals:
+    
+
+        
+    def ShowFatigueCalculationsOverview(fatigueCalculations, BC,MAT, crenellationPattern): # function revived from older versions, still needs some adaption to current code structure
+        """
+        This method shows the Fatigue Calculations overview when a solution is provided
+        Instead of storing the FatigueCalculations from the GA calculations, this method re-evaluates the fatigue life by performing the calculation for the given Chromosome
+        """
+        """
+        create the subplot structure
+        """
+        fig, axs = pp.subplots(3,2, figsize=(15,10))
+        
+        """
+        Load in parameters for the plots
+        """
+        Kth = 1
+        Kmax =1
+        delta_a = BC.delta_a[0]
+        a_max = BC.a_max[0]
+        a_0 = BC.a_0[0]
+        total_a = a_max - a_0
+        size = int(total_a / delta_a)
+        
+        """
+        Crenellated panel lifetime values
+        """
+        #First plot dadN - K
+        axs[0,1].plot(fatigueCalculations['K'],fatigueCalculations['dadN'], 'r')
+        axs[0,1].set_title('Fig 1.b: Material data')
+        axs[0,1].set_xlabel('K [MPa*SQRT(m)]')
+        axs[0,1].set_xscale('log')
+        axs[0,1].set_xlim([Kth,Kmax])
+        axs[0,1].set_ylabel('da/dN [mm/N]')
+        axs[0,1].set_yscale('log')
+        
+        #Second plot dadN - a
+        axs[0,0].plot(fatigueCalculations['a'],fatigueCalculations['dadN'], 'r', label = "Var")
+#        axs[0,0].plot(a_list_ref,dadN_list_ref, 'g', label = "Ref")
+        axs[0,0].set_title('Fig 1.a: Predicted crack growth')
+        axs[0,0].set_xlabel('crack length a [mm]')
+        axs[0,0].set_xlim([0,len(crenellationPattern)])
+        axs[0,0].set_ylabel('da/dN [mm/N]')
+        axs[0,0].set_yscale('log')
+        axs[0,0].set_ylim([0.0001,0.01])
+        axs[0,0].legend()
+         
+        #Second plot dadN - a
+        axs[1,0].plot(fatigueCalculations['a'],fatigueCalculations['dN'], 'r', label = "Var")
+#        axs[2,0].plot(a_list_ref,dadN_list_ref, 'g', label = "Ref")
+        axs[1,0].set_title('Fig 1.e: dN per crack growth step')
+        axs[1,0].set_xlabel('crack length a [mm]')
+        axs[1,0].set_xlim([0,len(crenellationPattern)])
+        axs[1,0].set_ylabel('dN [cycles]')
+        axs[1,0].set_yscale('log')
+#        axs[2,0].axhline(y=0, linewidth=1, color = 'b')
+        axs[1,0].legend()
+        
+        #Third plot a - K
+#        axs[1,0].plot(population_eval['a'],population_eval['K'], 'r', label = "Var")
+##        axs[1,0].plot(K_list_ref,a_list_ref, 'g', label = "Ref")
+#        axs[1,0].set_title('Fig 1.d: Calculated K')
+#        axs[1,0].set_ylabel('K [MPa*SQRT(m)]')
+#        axs[1,0].set_ylim([Kth,Kmax])
+#        axs[1,0].set_yscale('log')
+#        axs[1,0].set_xlabel('crack length a [mm]')
+#        axs[1,0].set_xlim([0,500])
+#        axs[1,0].legend()
+        
+        #Fourth plot - thickness profile 
+        axs[2,0].plot(crenellationPattern['Width'],crenellationPattern['Thickness'], 'r', label = "Var")
+        axs[2,0].set_title('Fig 1.c: Thickness profile')
+        axs[2,0].set_xlabel('panel half width [mm]')
+        axs[2,0].set_ylabel('thickness t [mm]')
+        axs[2,0].set_xlim([0,len(crenellationPattern)])
+        axs[2,0].axhline(y=2.9, linewidth = 1, color= 'g', label = "Ref")
+        
+        #Fifth plot - a - N
+#        f_life = fatigueCalculations['N'].iloc[-1]
+#        axs[1,1].plot(fatigueCalculations['N'][0:size],fatigueCalculations['a'], 'r', label ="Var")
+##        axs[1,1].plot(life_ref,a_list_ref, 'g', label = "Ref")
+#        axs[1,1].set_title('Fig 1.e: Crack length over cycles N')
+#        axs[1,1].set_xlim([f_life-0.33*f_life,f_life+0.33*f_life])
+#        axs[1,1].set_xlabel('number of cycles [N]')
+#        axs[1,1].set_ylabel('crack length a [mm]')
+#        axs[1,1].set_ylim([0,500])
+#        axs[1,1].legend()
+        
+        pp.tight_layout()
+        pp.show()
+=======
+>>>>>>> parent of b76d0c9... Update 3.0
 
 class FatigueVisuals:
     
@@ -105,8 +209,188 @@ class FatigueVisuals:
         pp.show()
         
         
+    def ShowNeutralAllelesDetermination(AlleleRelativeStrengthDict, BC):
+        """
+        This method shows the allele strengths for an experiment in determing which alleles are neutral alleles
+        """
+                
+        import database_connection
+
+        
+        pp.figure(1, figsize = (6,6))
+        filledMarkers = ['o',  '^',  '8', 's', 'p', '*',  'D', 'd', 'P', 'X','X']
+        lineStylesNames = ['solid', 'dashed',  'densely dashed', 'dashdotted', 'densely dashdotted', 'loosely dashdotdotted', 'dashdotdotted', 'densely dashdotdotted']
+        linestyles = OrderedDict(
+                    [('solid',               (0, ())),
+                     ('loosely dotted',      (0, (1, 10))),
+                     ('dotted',              (0, (1, 5))),
+                     ('densely dotted',      (0, (1, 1))),
+                
+                     ('loosely dashed',      (0, (5, 10))),
+                     ('dashed',              (0, (5, 5))),
+                     ('densely dashed',      (0, (5, 1))),
+                
+                     ('loosely dashdotted',  (0, (3, 10, 1, 10))),
+                     ('dashdotted',          (0, (3, 5, 1, 5))),
+                     ('densely dashdotted',  (0, (3, 1, 1, 1))),
+                
+                     ('loosely dashdotdotted', (0, (3, 10, 1, 10, 1, 10))),
+                     ('dashdotdotted',         (0, (3, 5, 1, 5, 1, 5))),
+                     ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))])
     
+<<<<<<< HEAD
+        style = -1
+
+        # lookup the data to draw the graphs for each experiment
+        
+        for gene in range(0,int(BC.n_total[0]/2)):
+            
+            for allele in range(1,len(BC.T_dict[0])):
+                
+                dataPoints = []
+                
+                for Generation in range(0,int(BC.NumberOfGenerations[0])): 
+                    
+                    dataPoint = np.flipud(AlleleRelativeStrengthDict["Gen "+str(Generation)]["Average"])[allele][gene]
+
+                    dataPoints.append(dataPoint)
+                    
+                
+                pp.plot(dataPoints, label = str([gene,allele, np.around(dataPoints[0], decimals = 2)]) , linestyle = linestyles[lineStylesNames[style]], linewidth = 3)
+                pp.legend()
+                
+        pp.xlabel("Generations")
+        pp.ylabel("Relative Fitness of Alleles")
+        pp.ylim(0,1)
+        pp.xlim(0,BC.NumberOfGenerations[0])
+        pp.xticks(np.arange(0, BC.NumberOfGenerations[0]+1,2))
+        pp.title("Relative Alleles Strength over Generations "+str(BC.Experiment_Group[0]))
+        
+            
+    def ShowNeutralAlleles(AlleleDictionaryComplete, Experiments, n , t, VaryingVariable):
+        """
+        This method shows the allele strengths for a given experiment for the buildingBlockSections provided.
+        """
+        NeutralAllele = 2
+        
+        AlleleStrengthArray = []
+        
+        import database_connection
+        
+        NumberOfAlleles = t
+        NumberOfGenes = n
+
+        NeutralAlleleDataDict = {}
+        
+        pp.figure(1, figsize = (6,6))
+        filledMarkers = ['o',  '^',  '8', 's', 'p', '*',  'D', 'd', 'P', 'X','X']
+        lineStylesNames = ['solid', 'dashed',  'densely dashed', 'dashdotted', 'densely dashdotted', 'loosely dashdotdotted', 'dashdotdotted', 'densely dashdotdotted']
+        linestyles = OrderedDict(
+                    [('solid',               (0, ())),
+                     ('loosely dotted',      (0, (1, 10))),
+                     ('dotted',              (0, (1, 5))),
+                     ('densely dotted',      (0, (1, 1))),
+                
+                     ('loosely dashed',      (0, (5, 10))),
+                     ('dashed',              (0, (5, 5))),
+                     ('densely dashed',      (0, (5, 1))),
+                
+                     ('loosely dashdotted',  (0, (3, 10, 1, 10))),
+                     ('dashdotted',          (0, (3, 5, 1, 5))),
+                     ('densely dashdotted',  (0, (3, 1, 1, 1))),
+                
+                     ('loosely dashdotdotted', (0, (3, 10, 1, 10, 1, 10))),
+                     ('dashdotdotted',         (0, (3, 5, 1, 5, 1, 5))),
+                     ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))])
+    
+        style = -1
+        EvaluationMax = 0
+        
+        # determine the maximum number of evaluations to use for the x-axis
+        for experiment in np.flipud(Experiments):
+            gene = 0
+            allele = 0
+            NumberOfGenerations = len(AlleleDictionaryComplete["n_"+str(n)]["t_"+str(t)]["Gene_"+str(gene)]["Allele_"+str(allele)][experiment])
+            
+            for generation in range(0,NumberOfGenerations):
+                
+                numberOfEvaluations = AlleleDictionaryComplete["n_"+str(n)]["t_"+str(t)]["Gene_"+str(gene)]["Allele_"+str(allele)][experiment]["Gen_"+str(generation)]["Evaluations"]
+                
+                if EvaluationMax < numberOfEvaluations:
+                    EvaluationMax = numberOfEvaluations
+                else:
+                    pass 
+        
+        # lookup the data to draw the graphs for each experiment
+        
+        for experiment in Experiments:
+            style = style +1 
+            gene = 0
+            allele = 0
+            NeutralAlleleDataAverage = []
+            NumberOfGenerations = len(AlleleDictionaryComplete["n_"+str(n)]["t_"+str(t)]["Gene_"+str(gene)]["Allele_"+str(allele)][experiment])
+            Evaluations = []
+            
+            
+            for generation in range(0,NumberOfGenerations):
+                
+                NeutralAlleleDataArray = []
+                EvaluationGeneration = AlleleDictionaryComplete["n_"+str(n)]["t_"+str(t)]["Gene_"+str(gene)]["Allele_"+str(NeutralAllele)][experiment]["Gen_"+str(generation)]["Evaluations"]
+                Evaluations = np.append(Evaluations, EvaluationGeneration)
+                
+                for gene in range(0,NumberOfGenes):
+                    
+                    NeutralAlleleValue = AlleleDictionaryComplete["n_"+str(n)]["t_"+str(t)]["Gene_"+str(gene)]["Allele_"+str(NeutralAllele)][experiment]["Gen_"+str(generation)]["Fitness"]
+                    
+                    NeutralAlleleDataArray = np.append(NeutralAlleleDataArray, NeutralAlleleValue)
+                    
+                NeutralAlleleDataAverage = np.append(NeutralAlleleDataAverage, np.average(NeutralAlleleDataArray))
+            
+#            if EvaluationMax < np.max(Evaluations):
+#                EvaluationMax = int(np.max(Evaluations))
+#            else:
+#                pass
+#               
+            if Evaluations[-1] < EvaluationMax:
+                Evaluations = np.append(Evaluations,EvaluationMax)
+                NeutralAlleleDataAverage = np.append(NeutralAlleleDataAverage,NeutralAlleleDataAverage[-1])
+            else:
+                pass
+                
+            NeutralAlleleDataDict["Ex_"+str(experiment)] = NeutralAlleleDataAverage
+            
+            ExperimentNumberID = int(experiment[3:])
+            BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+            N = BC.N_pop[0]
+            Pm = BC.Pm[0]
+            P = t**n
+            phi =  '{:0.1e}'.format(N / P)
+            
+            if VaryingVariable == "Npop":
+                label = str(ExperimentNumberID)+", N = "+ str(N)+", phi = "+str(phi)
+                
+            elif VaryingVariable == "Pm":
+                label = str(ExperimentNumberID)+", Pm = "+ str(Pm)
+
+            elif VaryingVariable == "MutationOperator":
+                label = str(ExperimentNumberID)+", "+ str(BC.MutationOperator[0])
+
+
+            pp.plot(Evaluations,NeutralAlleleDataAverage, label = label , linestyle = linestyles[lineStylesNames[style]], linewidth = 3)
+            pp.legend()
+        pp.xlabel("Evaluations")
+        pp.ylabel("Relative Fitness of Neutral Alleles")
+        pp.ylim(0,1)
+        pp.xlim(0,EvaluationMax)
+        pp.xticks(np.arange(0, EvaluationMax,20))
+        pp.title("Neutral Alleles Strength over Generations "+str(BC.Experiment_Group[0]))
+        return AlleleStrengthArray
+        
+        
+        
+=======
 class PopulationVisuals:
+>>>>>>> parent of b76d0c9... Update 3.0
     
 
     def ShowAlleleStrengthComposition(PopulationComposition, NumberOfGenerations):
@@ -658,4 +942,266 @@ class PopulationVisuals:
 #        
 #        
         
+<<<<<<< HEAD
+        """
+        Crenellated panel lifetime values
+        """
+        #First plot dadN - K
+        axs[0,1].plot(population_eval['K'],population_eval['dadN'], 'r')
+        axs[0,1].set_title('Fig 1.b: Material data')
+        axs[0,1].set_xlabel('K [MPa*SQRT(m)]')
+        axs[0,1].set_xscale('log')
+        axs[0,1].set_xlim([Kth,Kmax])
+        axs[0,1].set_ylabel('da/dN [mm/N]')
+        axs[0,1].set_yscale('log')
         
+        #Second plot dadN - a
+        axs[0,0].plot(population_eval['a'],population_eval['dadN'], 'r', label = "Var")
+#        axs[0,0].plot(a_list_ref,dadN_list_ref, 'g', label = "Ref")
+        axs[0,0].set_title('Fig 1.a: Predicted crack growth')
+        axs[0,0].set_xlabel('crack length a [mm]')
+        axs[0,0].set_xlim([0,500])
+        axs[0,0].set_ylabel('da/dN [mm/N]')
+        axs[0,0].set_yscale('log')
+        axs[0,0].legend()
+         
+        #Second plot dadN - a
+        axs[1,0].plot(population_eval['a'],population_eval['dN'], 'r', label = "Var")
+#        axs[2,0].plot(a_list_ref,dadN_list_ref, 'g', label = "Ref")
+        axs[1,0].set_title('Fig 1.e: dN per crack growth step')
+        axs[1,0].set_xlabel('crack length a [mm]')
+        axs[1,0].set_xlim([0,500])
+        axs[1,0].set_ylabel('dN [cycles]')
+        axs[1,0].set_yscale('log')
+#        axs[2,0].axhline(y=0, linewidth=1, color = 'b')
+        axs[1,0].legend()
+        
+        #Third plot a - K
+#        axs[1,0].plot(population_eval['a'],population_eval['K'], 'r', label = "Var")
+##        axs[1,0].plot(K_list_ref,a_list_ref, 'g', label = "Ref")
+#        axs[1,0].set_title('Fig 1.d: Calculated K')
+#        axs[1,0].set_ylabel('K [MPa*SQRT(m)]')
+#        axs[1,0].set_ylim([Kth,Kmax])
+#        axs[1,0].set_yscale('log')
+#        axs[1,0].set_xlabel('crack length a [mm]')
+#        axs[1,0].set_xlim([0,500])
+#        axs[1,0].legend()
+        
+        #Fourth plot - thickness profile 
+        axs[2,0].plot(t_pattern['Width'],t_pattern['thickness'], 'r', label = "Var")
+        axs[2,0].set_title('Fig 1.c: Thickness profile')
+        axs[2,0].set_xlabel('panel half width [mm]')
+        axs[2,0].set_ylabel('thickness t [mm]')
+        axs[2,0].axhline(y=2, linewidth = 1, color= 'g', label = "Ref")
+        
+        #Fifth plot - a - N
+        f_life = population_eval['N'].iloc[-1]
+        axs[1,1].plot(population_eval['N'][0:size],population_eval['a'], 'r', label ="Var")
+#        axs[1,1].plot(life_ref,a_list_ref, 'g', label = "Ref")
+        axs[1,1].set_title('Fig 1.e: Crack length over cycles N')
+        axs[1,1].set_xlim([f_life-0.33*f_life,f_life+0.33*f_life])
+        axs[1,1].set_xlabel('number of cycles [N]')
+        axs[1,1].set_ylabel('crack length a [mm]')
+        axs[1,1].set_ylim([0,500])
+        axs[1,1].legend()
+        
+        pp.tight_layout()
+        pp.show()
+        
+        
+class LandscapeVisuals:
+    
+    
+    def Show3by3Landscape():
+        
+        import visuals
+        import database_connection
+        import crenellation
+        
+        ExperimentNumberID = 1
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+        MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
+        
+        fig = pp.figure(figsize=(6, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        
+        if BC.Fitness_Function_ID[0] == "Set 1":
+
+            title = "Fitness landscape (F(X) = N)"
+        elif BC.Fitness_Function_ID[0] == "Set 2":
+
+            title = "Fitness landscape (F(X) = N/A)"
+        elif BC.Fitness_Function_ID[0] == "Set 3":
+
+            title = "Fitness landscape (F(X) = N/A^m)"
+        
+        n1 = [float(BC.T_dict[0][str(0)]),float(BC.T_dict[0][str(1)]),float(BC.T_dict[0][str(2)])]
+        n2 = [float(BC.T_dict[0][str(0)]),float(BC.T_dict[0][str(1)]),float(BC.T_dict[0][str(2)])]
+        n3 = [float(BC.T_dict[0][str(0)]),float(BC.T_dict[0][str(1)]),float(BC.T_dict[0][str(2)])]
+        
+        FitnessTotal = {}
+        
+        for n3level in range(0,3):
+            
+            Fitness = np.zeros((len(n1),len(n2)))
+            
+            for N1 in range(0,len(n1)):
+                
+                for N2 in range(0,len(n2)):
+                    
+                    FitnessValue = visuals.LandscapeVisuals.ReturnLandscapeValue3by3(n1[N1],n2[N2],n3[n3level])
+
+                    Fitness[N2][N1] = FitnessValue
+            
+            FitnessTotal["N3_"+str(n3level)] = Fitness
+            
+        
+        # normalize all fitness values
+        
+        Fitnesses = []
+
+        for value in range(0,len(FitnessTotal)):
+            
+            for value2 in range(0,len(FitnessTotal["N3_"+str(value)])):
+                
+                for value3 in range(0,len(FitnessTotal["N3_"+str(value)][value2])):
+                
+                    Fitnesses.append(FitnessTotal["N3_"+str(value)][value2][value3])
+         
+        FitnessesNorm = []
+        for number in range(0,len(Fitnesses)):
+            FitnessesNorm.append((Fitnesses[number] - np.min(Fitnesses)) / (np.max(Fitnesses) - np.min(Fitnesses)))
+            
+        
+        Number = 0
+        for value in range(0,len(FitnessTotal)):
+            
+            for value2 in range(0,len(FitnessTotal["N3_"+str(value)])):
+                
+                for value3 in range(0,len(FitnessTotal["N3_"+str(value)][value2])):
+                
+                    FitnessTotal["N3_"+str(value)][value2][value3] = FitnessesNorm[Number]
+                    Number += 1 
+         
+
+        # plot all normalized fitness values
+        
+        for n3level in range(0,3):
+        
+            ax.contour3D(n1, n2, FitnessTotal["N3_"+str(n3level)], 150, cmap='viridis',vmin=0, vmax=1, alpha=0.7)
+            
+        ax.set_xlabel('n1 [mm]')
+        ax.set_ylabel('n2 [mm]')
+        ax.set_zlabel('Fitness [N]',labelpad = 10)
+        pp.ticklabel_format(style='sci', axis='z', scilimits=(0,0))
+        ax.set_title(title, y=1.05)
+                
+        pp.tight_layout()
+        pp.show()
+            
+            
+        
+    def ReturnLandscapeValue3by3(n1,n2,n3):
+        
+        import genetic_algorithm 
+        import database_connection
+        import crenellation
+        
+        ExperimentNumberID = 1
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+        MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
+        
+        # Create Chromosome
+        
+        Genotype = [n1,n2,n3,n3,n2,n1]
+        
+        Chromosome = crenellation.CrenellationPattern.ConstructChromosomeGenotype(Genotype, BC.n_total[0], BC.W[0], BC.Delta_a[0])
+        
+        # Evaluate Chromosome
+        
+        Fitness, FatigueCalculations = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],Chromosome, BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0], BC)
+
+        return Fitness
+    
+        
+    def Show5by5Landscape():
+        
+        import visuals
+        import database_connection
+        import crenellation
+        
+        ExperimentNumberID = 1
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+        MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
+        
+        fig = pp.figure(figsize=(6, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        
+        if BC.Fitness_Function_ID[0] == "Set 1":
+            vmin = 0
+            vmax = 560000
+            title = "Fitness landscape (F(X) = N)"
+        elif BC.Fitness_Function_ID[0] == "Set 1":
+            vmin = 0
+            vmax = 1000
+            title = "Fitness landscape (F(X) = N/A)"
+        elif BC.Fitness_Function_ID[0] == "Set 3":
+            vmin = 0.0000020
+            vmax = 0.0000046
+            title = "Fitness landscape (F(X) = N/A^m)"
+        
+        n1 = [float(BC.T_dict[0][str(0)]),float(BC.T_dict[0][str(1)]),float(BC.T_dict[0][str(2)])]
+        n2 = [float(BC.T_dict[0][str(0)]),float(BC.T_dict[0][str(1)]),float(BC.T_dict[0][str(2)])]
+        n3 = [float(BC.T_dict[0][str(0)]),float(BC.T_dict[0][str(1)]),float(BC.T_dict[0][str(2)])]
+            
+        for n3level in range(0,3):
+            
+            Fitness = np.zeros((len(n1),len(n2)))
+            
+            for N1 in range(0,len(n1)):
+                
+                for N2 in range(0,len(n2)):
+                    
+                    FitnessValue = visuals.LandscapeVisuals.ReturnLandscapeValue(n1[N1],n2[N2],n3[n3level])
+
+                    Fitness[N2][N1] = FitnessValue
+            
+            ax.contour3D(n1, n2, Fitness, 150, cmap='viridis',vmin=vmin, vmax=vmax, alpha=0.7)
+#            ax.plot_surface(n1, n2, Fitness, rstride=1, cstride=1,cmap='viridis', edgecolor='none')
+#            ax.plot_wireframe(n1, n2, Fitness, color='black')
+        
+#        ax.set_zlim([0,1000])
+        ax.set_xlabel('n1 [mm]')
+        ax.set_ylabel('n2 [mm]')
+        ax.set_zlabel('Fitness [N]',labelpad = 10)
+        pp.ticklabel_format(style='sci', axis='z', scilimits=(0,0))
+        ax.set_title(title, y=1.05)
+                
+        pp.tight_layout()
+        pp.show()
+            
+        
+    def ReturnLandscapeValue5by5(n1,n2,n3,n4,n5):
+        
+        import genetic_algorithm 
+        import database_connection
+        import crenellation
+        
+        ExperimentNumberID = 1
+        BC = database_connection.Database.RetrieveBoundaryConditions(ExperimentNumberID)
+        MAT = database_connection.Database.RetrieveMaterial(BC.Material_ID[0])
+        
+        # Create Chromosome
+        
+        Genotype = [n1,n2,n3,n3,n2,n1]
+        
+        Chromosome = crenellation.CrenellationPattern.ConstructChromosomeGenotype(Genotype, BC.n_total[0], BC.W[0], BC.Delta_a[0])
+        
+        # Evaluate Chromosome
+        
+        Fitness, FatigueCalculations = genetic_algorithm.GeneticAlgorithm.EvaluateFitnessFunction(BC.Fitness_Function_ID[0],Chromosome, BC.S_max[0], BC.a_0[0], BC.a_max[0], BC.Delta_a[0],MAT.C[0],MAT.m[0], BC)
+
+        return Fitness
+=======
+        
+>>>>>>> parent of b76d0c9... Update 3.0
